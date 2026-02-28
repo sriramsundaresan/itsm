@@ -250,16 +250,41 @@ function hideSettings() {
   document.getElementById('settingsModal')?.classList.remove('active');
 }
 
-function saveSettings() {
-  ITSM.config.repo = document.getElementById('settingsRepo').value.trim();
-  ITSM.config.token = document.getElementById('settingsToken').value.trim();
-  ITSM.config.orgName = document.getElementById('settingsOrg').value.trim();
+async function saveSettings() {
+  const repo = document.getElementById('settingsRepo').value.trim();
+  const token = document.getElementById('settingsToken').value.trim();
+  const orgName = document.getElementById('settingsOrg').value.trim() || 'IT Service Portal';
+
+  if (!repo || !token) {
+    showToast('Repository and Token are required!', 'error');
+    return;
+  }
+
+  // Test connection before saving
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}`, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast('Connection failed: ' + (err.message || `HTTP ${res.status}`), 'error');
+      return;
+    }
+  } catch (e) {
+    showToast('Connection failed: ' + e.message, 'error');
+    return;
+  }
+
+  ITSM.config.repo = repo;
+  ITSM.config.token = token;
+  ITSM.config.orgName = orgName;
   hideSettings();
-  showToast('Settings saved!', 'success');
-  // Update portal name
+  showToast('Settings saved! Connected successfully.', 'success');
   const logo = document.querySelector('.logo-text');
   if (logo) logo.textContent = ITSM.config.orgName;
-  // Reload page data
   if (typeof loadPageData === 'function') loadPageData();
 }
 
