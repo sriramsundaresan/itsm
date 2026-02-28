@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Catalog - IT Service Portal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="top-nav">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <span class="logo-text">IT Service Portal</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="tickets.html">Tickets</a></li>
+      <li><a href="new-ticket.html">New Ticket</a></li>
+      <li><a href="catalog.html" class="active">Service Catalog</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="settings-btn" onclick="showSettings()" title="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>Service Catalog</h1>
+      <p>Browse available IT services and request what you need</p>
+    </div>
+
+    <!-- Compute -->
+    <div class="card">
+      <div class="card-header">
+        <h2>💻 Compute Services</h2>
+      </div>
+      <div class="catalog-grid">
+        <div class="catalog-item">
+          <div class="cat-icon">🖥️</div>
+          <h3>Virtual Machine</h3>
+          <p>Provision Windows or Linux VMs on Azure with your required specs.</p>
+          <div class="cat-meta">
+            <span>SLA: 2 business days</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">🚀</div>
+          <h3>App Service</h3>
+          <p>Deploy web apps, APIs, or mobile backends on Azure App Service.</p>
+          <div class="cat-meta">
+            <span>SLA: 1 business day</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">☸️</div>
+          <h3>Kubernetes Cluster</h3>
+          <p>Azure Kubernetes Service (AKS) cluster for container workloads.</p>
+          <div class="cat-meta">
+            <span>SLA: 3 business days</span>
+            <span>Requires approval</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database -->
+    <div class="card">
+      <div class="card-header">
+        <h2>🗄️ Database Services</h2>
+      </div>
+      <div class="catalog-grid">
+        <div class="catalog-item">
+          <div class="cat-icon">💾</div>
+          <h3>Azure SQL Database</h3>
+          <p>Managed SQL database with built-in HA, backups, and scaling.</p>
+          <div class="cat-meta">
+            <span>SLA: 2 business days</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">🌿</div>
+          <h3>Cosmos DB</h3>
+          <p>Globally distributed NoSQL database for any scale.</p>
+          <div class="cat-meta">
+            <span>SLA: 2 business days</span>
+            <span>Requires approval</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">⚡</div>
+          <h3>Azure Cache for Redis</h3>
+          <p>In-memory data store for caching and session management.</p>
+          <div class="cat-meta">
+            <span>SLA: 1 business day</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Networking -->
+    <div class="card">
+      <div class="card-header">
+        <h2>🌐 Networking Services</h2>
+      </div>
+      <div class="catalog-grid">
+        <div class="catalog-item">
+          <div class="cat-icon">🔗</div>
+          <h3>Virtual Network / Subnet</h3>
+          <p>Azure VNet, subnets, NSGs, and peering configuration.</p>
+          <div class="cat-meta">
+            <span>SLA: 1 business day</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">🔒</div>
+          <h3>VPN / ExpressRoute</h3>
+          <p>Site-to-site VPN or ExpressRoute for hybrid connectivity.</p>
+          <div class="cat-meta">
+            <span>SLA: 5 business days</span>
+            <span>Requires approval</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">🛡️</div>
+          <h3>Azure Firewall / WAF</h3>
+          <p>Network security with Azure Firewall or Web Application Firewall.</p>
+          <div class="cat-meta">
+            <span>SLA: 3 business days</span>
+            <span>Requires approval</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Identity & Access -->
+    <div class="card">
+      <div class="card-header">
+        <h2>🔐 Identity & Access</h2>
+      </div>
+      <div class="catalog-grid">
+        <div class="catalog-item">
+          <div class="cat-icon">👤</div>
+          <h3>New User Account</h3>
+          <p>Create Entra ID (Azure AD) account with appropriate role assignments.</p>
+          <div class="cat-meta">
+            <span>SLA: 1 business day</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">🔑</div>
+          <h3>Access Permission Change</h3>
+          <p>Modify RBAC roles, group memberships, or subscription access.</p>
+          <div class="cat-meta">
+            <span>SLA: 4 hours</span>
+            <span>Manager approval</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">📱</div>
+          <h3>MFA / Conditional Access</h3>
+          <p>Configure MFA enrollment or conditional access policies.</p>
+          <div class="cat-meta">
+            <span>SLA: 1 business day</span>
+            <span>Security review</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Microsoft 365 -->
+    <div class="card">
+      <div class="card-header">
+        <h2>📧 Microsoft 365</h2>
+      </div>
+      <div class="catalog-grid">
+        <div class="catalog-item">
+          <div class="cat-icon">📬</div>
+          <h3>Email / Mailbox</h3>
+          <p>New mailbox, shared mailbox, or distribution list setup.</p>
+          <div class="cat-meta">
+            <span>SLA: 4 hours</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">💬</div>
+          <h3>Teams Channel/Team</h3>
+          <p>New Teams workspace, channels, or guest access configuration.</p>
+          <div class="cat-meta">
+            <span>SLA: 4 hours</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">📁</div>
+          <h3>SharePoint Site</h3>
+          <p>New SharePoint site, document library, or permissions update.</p>
+          <div class="cat-meta">
+            <span>SLA: 1 business day</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- DevOps -->
+    <div class="card">
+      <div class="card-header">
+        <h2>🔧 DevOps & Tooling</h2>
+      </div>
+      <div class="catalog-grid">
+        <div class="catalog-item">
+          <div class="cat-icon">🐙</div>
+          <h3>GitHub Repository</h3>
+          <p>New repo with branch policies, CI/CD pipelines, and team access.</p>
+          <div class="cat-meta">
+            <span>SLA: 4 hours</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">🚀</div>
+          <h3>CI/CD Pipeline</h3>
+          <p>GitHub Actions or Azure DevOps pipeline setup for your project.</p>
+          <div class="cat-meta">
+            <span>SLA: 2 business days</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+        <div class="catalog-item">
+          <div class="cat-icon">📊</div>
+          <h3>Monitoring & Alerts</h3>
+          <p>Azure Monitor, Application Insights, or Log Analytics setup.</p>
+          <div class="cat-meta">
+            <span>SLA: 2 business days</span>
+            <span>Standard</span>
+          </div>
+          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>⚙️ Portal Settings</h2>
+      <div class="form-group">
+        <label>Organization Name</label>
+        <input type="text" id="settingsOrg" placeholder="My Company IT Portal">
+      </div>
+      <div class="form-group">
+        <label>GitHub Repository <span class="required">*</span></label>
+        <input type="text" id="settingsRepo" placeholder="owner/repo">
+      </div>
+      <div class="form-group">
+        <label>GitHub Token <span class="required">*</span></label>
+        <input type="password" id="settingsToken" placeholder="ghp_...">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+        <button class="btn btn-secondary" onclick="hideSettings()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container"></div>
+  <script src="js/github-api.js"></script>
+  <script>
+    document.querySelector('.logo-text').textContent = ITSM.config.orgName;
+    function loadPageData() {}
+  </script>
+</body>
+</html>
