@@ -1,0 +1,161 @@
+name: "Service Request Fulfillment"
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  route-service-request:
+    if: contains(github.event.issue.labels.*.name, 'service-request')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Parse and Route Request
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+
+            // Parse category
+            let category = 'general';
+            let team = 'cloud-ops-team';
+            let estimatedDays = 5;
+
+            if (body.includes('Access & Permissions')) {
+              category = 'access';
+              team = 'identity-team';
+              estimatedDays = 1;
+            } else if (body.includes('Compute')) {
+              category = 'compute';
+              team = 'cloud-ops-team';
+              estimatedDays = 2;
+            } else if (body.includes('Database')) {
+              category = 'database';
+              team = 'data-team';
+              estimatedDays = 3;
+            } else if (body.includes('Networking')) {
+              category = 'networking';
+              team = 'network-team';
+              estimatedDays = 3;
+            } else if (body.includes('Storage')) {
+              category = 'storage';
+              team = 'cloud-ops-team';
+              estimatedDays = 2;
+            } else if (body.includes('Software')) {
+              category = 'software';
+              team = 'desktop-team';
+              estimatedDays = 2;
+            } else if (body.includes('Microsoft 365')) {
+              category = 'm365';
+              team = 'm365-team';
+              estimatedDays = 1;
+            } else if (body.includes('DevOps')) {
+              category = 'devops';
+              team = 'devops-team';
+              estimatedDays = 1;
+            } else if (body.includes('Security')) {
+              category = 'security';
+              team = 'security-team';
+              estimatedDays = 3;
+            }
+
+            // Parse urgency
+            let urgency = 'low';
+            if (body.includes('Critical - Today')) {
+              urgency = 'critical';
+              estimatedDays = 1;
+            } else if (body.includes('High - Within 2')) {
+              urgency = 'high';
+            } else if (body.includes('Medium - Within 1')) {
+              urgency = 'medium';
+            }
+
+            // Check if manager approval is needed
+            const managerMatch = body.match(/@([\w-]+)/);
+            const manager = managerMatch ? managerMatch[1] : null;
+            const needsApproval = urgency === 'critical' || category === 'security';
+
+            core.setOutput('category', category);
+            core.setOutput('team', team);
+            core.setOutput('estimated_days', estimatedDays);
+            core.setOutput('urgency', urgency);
+            core.setOutput('manager', manager || '');
+            core.setOutput('needs_approval', needsApproval);
+
+      - name: Label and Assign
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const category = '${{ steps.parse.outputs.category }}';
+            const urgency = '${{ steps.parse.outputs.urgency }}';
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [`category-${category}`, `urgency-${urgency}`, 'routed']
+            });
+
+      - name: Post Routing Summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const category = '${{ steps.parse.outputs.category }}';
+            const team = '${{ steps.parse.outputs.team }}';
+            const estimatedDays = '${{ steps.parse.outputs.estimated_days }}';
+            const urgency = '${{ steps.parse.outputs.urgency }}';
+            const manager = '${{ steps.parse.outputs.manager }}';
+            const needsApproval = '${{ steps.parse.outputs.needs_approval }}';
+
+            const urgencyEmoji = {
+              'critical': '🔴',
+              'high': '🟠',
+              'medium': '🟡',
+              'low': '🟢'
+            };
+
+            const etaDate = new Date(Date.now() + estimatedDays * 24 * 60 * 60 * 1000)
+              .toISOString().split('T')[0];
+
+            let approvalSection = '';
+            if (needsApproval === 'true' && manager) {
+              approvalSection = `
+            ### 🔐 Approval Required
+            @${manager} — please approve this request by commenting **"Approved"** or adding the \`approved\` label.
+            `;
+            }
+
+            const ticketId = `SR-${context.issue.number}`;
+
+            const comment = `## 📋 Service Request Routed
+
+            | Field | Value |
+            |-------|-------|
+            | **Ticket ID** | \`${ticketId}\` |
+            | **Category** | ${category} |
+            | **Urgency** | ${urgencyEmoji[urgency]} ${urgency.toUpperCase()} |
+            | **Assigned Team** | \`@${team}\` |
+            | **Estimated Completion** | ${estimatedDays} business days (by ${etaDate}) |
+
+            ${approvalSection}
+            ### Status Tracking
+            - [x] Request submitted
+            - [x] Auto-categorized and routed
+            - [ ] Team acknowledged
+            - [ ] In progress
+            - [ ] Completed
+            - [ ] Verified by requester
+
+            > _Your request has been assigned ticket \`${ticketId}\`. The ${team} will pick it up shortly. You'll be notified of updates on this issue._
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

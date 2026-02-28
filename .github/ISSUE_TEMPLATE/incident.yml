@@ -1,0 +1,99 @@
+name: "\U0001F534 Report an Incident"
+description: Report a service disruption or outage that needs immediate attention.
+title: "[INCIDENT] "
+labels: ["incident", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Report a Service Incident
+        Please provide as much detail as possible to help us resolve this quickly.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How critical is this incident?
+      options:
+        - "Critical - Complete service outage, business stopped"
+        - "High - Major feature broken, many users affected"
+        - "Medium - Service degraded, workaround available"
+        - "Low - Minor issue, minimal impact"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: service
+    attributes:
+      label: Affected Service
+      description: Which service is impacted?
+      options:
+        - "Email / Exchange Online"
+        - "VPN / Remote Access"
+        - "Azure Virtual Machines"
+        - "Azure SQL Database"
+        - "Microsoft 365 / Teams"
+        - "Azure DevOps"
+        - "Azure Networking"
+        - "Azure Storage"
+        - "Identity / Azure AD"
+        - "Other (specify below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is happening? Include error messages, screenshots, or logs.
+      placeholder: "Users in the London office cannot access email since 9am. Error message: 'Cannot connect to server'."
+    validations:
+      required: true
+
+  - type: input
+    id: users_affected
+    attributes:
+      label: Number of Users Affected
+      description: Approximate number of impacted users.
+      placeholder: "50"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: workaround
+    attributes:
+      label: Workaround Available?
+      options:
+        - "No"
+        - "Yes (describe below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround_details
+    attributes:
+      label: Workaround Details
+      description: If a workaround exists, describe it here.
+      placeholder: "Users can access email via the web browser at outlook.office.com"
+    validations:
+      required: false
+
+  - type: input
+    id: started_at
+    attributes:
+      label: When Did This Start?
+      description: Date and time the issue was first observed.
+      placeholder: "2026-02-28 09:00 UTC"
+    validations:
+      required: true
+
+  - type: textarea
+    id: recent_changes
+    attributes:
+      label: Recent Changes
+      description: Were any changes made before this started? (deployments, config changes, updates)
+      placeholder: "A new Exchange connector was deployed last night at 11pm."
+    validations:
+      required: false

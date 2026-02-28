@@ -1,0 +1,103 @@
+name: "\U0001F4CB Request a Service"
+description: Request a new service, resource, or access for your team.
+title: "[REQUEST] "
+labels: ["service-request", "new"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Service Request
+        Browse the [Service Catalog](../docs/service_catalog.md) to see available services.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Request Category
+      description: What type of service do you need?
+      options:
+        - "Access & Permissions - Azure AD group, role assignment, MFA"
+        - "Compute - Virtual Machine, App Service, Container"
+        - "Database - Azure SQL, Cosmos DB, PostgreSQL"
+        - "Networking - VNet, VPN, Load Balancer, DNS"
+        - "Storage - Blob Storage, File Share, Backup"
+        - "Software - Application install, license, subscription"
+        - "Microsoft 365 - Teams, SharePoint, OneDrive, Exchange"
+        - "DevOps - Repository, Pipeline, Board access"
+        - "Security - Firewall rule, Certificate, Key Vault"
+        - "Other (describe below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Request Details
+      description: Describe what you need and the business justification.
+      placeholder: |
+        Need: 2x Standard_D4s_v3 VMs in West Europe region
+        Purpose: New web application for customer portal
+        Business justification: Customer portal launch in March 2026
+    validations:
+      required: true
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      options:
+        - "Low - Within 2 weeks"
+        - "Medium - Within 1 week"
+        - "High - Within 2 business days"
+        - "Critical - Today (requires manager approval)"
+    validations:
+      required: true
+
+  - type: input
+    id: cost_center
+    attributes:
+      label: Cost Center / Budget Code
+      description: Which cost center should be charged?
+      placeholder: "CC-2450 / Project-Phoenix"
+    validations:
+      required: true
+
+  - type: input
+    id: requester_team
+    attributes:
+      label: Team / Department
+      placeholder: "Engineering - Platform Team"
+    validations:
+      required: true
+
+  - type: input
+    id: manager
+    attributes:
+      label: Manager (for approval)
+      description: GitHub username of your manager.
+      placeholder: "@manager-username"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: duration
+    attributes:
+      label: Duration
+      description: How long do you need this resource?
+      options:
+        - "Permanent"
+        - "Temporary - 1 month"
+        - "Temporary - 3 months"
+        - "Temporary - 6 months"
+        - "Project-based (specify end date below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional Information
+      description: Any other details, constraints, or compliance requirements.
+    validations:
+      required: false

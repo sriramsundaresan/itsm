@@ -1,0 +1,171 @@
+name: "Change Approval Workflow"
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  change-review:
+    if: contains(github.event.issue.labels.*.name, 'change-request')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Parse Change Details
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+
+            // Parse change type
+            let changeType = 'normal';
+            let autoApprove = false;
+            if (body.includes('Standard')) {
+              changeType = 'standard';
+              autoApprove = true;
+            } else if (body.includes('Emergency')) {
+              changeType = 'emergency';
+            } else {
+              changeType = 'normal';
+            }
+
+            // Parse risk level
+            let risk = 'medium';
+            if (body.includes('High -')) {
+              risk = 'high';
+            } else if (body.includes('Low -')) {
+              risk = 'low';
+            }
+
+            // Parse environment
+            let env = 'unknown';
+            if (body.includes('Production')) env = 'production';
+            else if (body.includes('Staging')) env = 'staging';
+            else if (body.includes('Development')) env = 'development';
+
+            // Check rollback plan exists
+            const hasRollback = body.includes('Rollback Plan') && 
+              body.split('Rollback Plan')[1]?.trim().length > 20;
+
+            // Check pre-change checklist
+            const checkedBoxes = (body.match(/\[x\]/gi) || []).length;
+            const totalBoxes = (body.match(/\[[ x]\]/gi) || []).length;
+            const checklistComplete = checkedBoxes === totalBoxes && totalBoxes > 0;
+
+            core.setOutput('change_type', changeType);
+            core.setOutput('auto_approve', autoApprove);
+            core.setOutput('risk', risk);
+            core.setOutput('environment', env);
+            core.setOutput('has_rollback', hasRollback);
+            core.setOutput('checklist_complete', checklistComplete);
+            core.setOutput('checklist_score', `${checkedBoxes}/${totalBoxes}`);
+
+      - name: Auto-Approve Standard Changes
+        if: steps.parse.outputs.auto_approve == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['approved', 'standard-change']
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ✅ Standard Change — Auto-Approved
+
+            This is a **pre-approved standard change**. No CAB review required.
+
+            ### Next Steps
+            1. ✅ Change approved automatically
+            2. 📋 Implement during the proposed schedule
+            3. 🔄 Update this issue when implementation begins
+            4. ✅ Close this issue when completed and verified
+
+            > _Standard changes are pre-approved low-risk changes that follow an established procedure._`
+            });
+
+      - name: Request Approval for Normal/Emergency Changes
+        if: steps.parse.outputs.auto_approve == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changeType = '${{ steps.parse.outputs.change_type }}';
+            const risk = '${{ steps.parse.outputs.risk }}';
+            const env = '${{ steps.parse.outputs.environment }}';
+            const hasRollback = '${{ steps.parse.outputs.has_rollback }}';
+            const checklistScore = '${{ steps.parse.outputs.checklist_score }}';
+
+            const riskEmoji = { 'high': '🔴', 'medium': '🟡', 'low': '🟢' };
+            const typeEmoji = { 'emergency': '🚨', 'normal': '🔄' };
+
+            // Determine approvers based on risk
+            let approvers = '@change-approvers';
+            if (risk === 'high' || env === 'production') {
+              approvers = '@change-approvers @senior-architects';
+            }
+            if (changeType === 'emergency') {
+              approvers = '@emergency-change-approvers';
+            }
+
+            // Add appropriate labels
+            const labels = [`risk-${risk}`, `env-${env}`];
+            if (changeType === 'emergency') labels.push('emergency-change');
+            if (!hasRollback) labels.push('missing-rollback-plan');
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: labels
+            });
+
+            // Build review comment
+            let warnings = [];
+            if (hasRollback !== 'true') warnings.push('⚠️ **Rollback plan missing or insufficient**');
+            if (checklistScore.split('/')[0] !== checklistScore.split('/')[1]) {
+              warnings.push(`⚠️ **Pre-change checklist incomplete** (${checklistScore})`);
+            }
+            if (risk === 'high' && env === 'production') {
+              warnings.push('⚠️ **High risk production change — requires senior architect approval**');
+            }
+
+            const warningSection = warnings.length > 0 
+              ? `### ⚠️ Warnings\n${warnings.join('\n')}\n` 
+              : '### ✅ No warnings — all checks passed\n';
+
+            const comment = `## ${typeEmoji[changeType] || '🔄'} Change Review Required
+
+            | Field | Value |
+            |-------|-------|
+            | **Type** | ${changeType.toUpperCase()} |
+            | **Risk** | ${riskEmoji[risk]} ${risk.toUpperCase()} |
+            | **Environment** | ${env} |
+            | **Rollback Plan** | ${hasRollback === 'true' ? '✅ Provided' : '❌ Missing'} |
+            | **Checklist** | ${checklistScore} |
+
+            ${warningSection}
+            ### Approval Required
+            **Reviewers**: ${approvers}
+
+            Please review and comment:
+            - 👍 **Approve** — add the \`approved\` label
+            - 👎 **Reject** — add the \`rejected\` label and comment why
+            - 💬 **Request changes** — comment with what needs to change
+
+            > _${changeType === 'emergency' ? '🚨 Emergency change — expedited review required' : 'Normal change — review within 2 business days'}_
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
