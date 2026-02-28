@@ -10,7 +10,14 @@ const ITSM = {
     set token(v) { localStorage.setItem('itsm_token', v); },
     get orgName() { return localStorage.getItem('itsm_org') || 'IT Service Portal'; },
     set orgName(v) { localStorage.setItem('itsm_org', v); },
-    get isConfigured() { return !!(this.repo && this.token); }
+    get role() { return localStorage.getItem('itsm_role') || 'user'; },
+    set role(v) { localStorage.setItem('itsm_role', v); },
+    get username() { return localStorage.getItem('itsm_username') || ''; },
+    set username(v) { localStorage.setItem('itsm_username', v); },
+    get isConfigured() { return !!(this.repo && this.token); },
+    get isAdmin() { return this.role === 'admin'; },
+    get isApprover() { return this.role === 'approver'; },
+    get isUser() { return this.role === 'user'; }
   },
 
   // ---- API Helpers ----
@@ -115,21 +122,47 @@ const ITSM = {
       this.api('/issues?state=open&labels=service-request&per_page=100')
     ]);
     const all = [...changes, ...services].filter(i => !i.pull_request);
-    return all.filter(i => {
+    const pending = all.filter(i => {
       const labels = i.labels.map(l => l.name);
       return !labels.includes('approved') && !labels.includes('rejected');
     });
+
+    // Approvers only see items assigned to them
+    if (this.config.isApprover && this.config.username) {
+      return pending.filter(i =>
+        i.assignee && i.assignee.login.toLowerCase() === this.config.username.toLowerCase()
+      );
+    }
+    return pending;
   },
 
-  // ---- Dashboard Stats ----
-  async getStats() {
+  // Get tickets filtered by role
+  async getMyTickets(filters = {}) {
+    const tickets = await this.getTickets(filters);
+    if (this.config.isUser && this.config.username) {
+      return tickets.filter(t =>
+        t.user && t.user.login.toLowerCase() === this.config.username.toLowerCase()
+      );
+    }
+    return tickets;
+  },
+
+  // Get stats filtered by role
+  async getMyStats() {
     const [open, closed] = await Promise.all([
       this.api('/issues?state=open&per_page=100'),
       this.api('/issues?state=closed&per_page=100')
     ]);
 
-    const openIssues = open.filter(i => !i.pull_request);
-    const closedIssues = closed.filter(i => !i.pull_request);
+    let openIssues = open.filter(i => !i.pull_request);
+    let closedIssues = closed.filter(i => !i.pull_request);
+
+    // Users only see their own tickets
+    if (this.config.isUser && this.config.username) {
+      const u = this.config.username.toLowerCase();
+      openIssues = openIssues.filter(i => i.user && i.user.login.toLowerCase() === u);
+      closedIssues = closedIssues.filter(i => i.user && i.user.login.toLowerCase() === u);
+    }
 
     const hasLabel = (issue, label) => issue.labels.some(l => l.name === label);
 
@@ -282,6 +315,10 @@ function showSettings() {
     document.getElementById('settingsRepo').value = ITSM.config.repo;
     document.getElementById('settingsToken').value = ITSM.config.token;
     document.getElementById('settingsOrg').value = ITSM.config.orgName;
+    const roleSelect = document.getElementById('settingsRole');
+    if (roleSelect) roleSelect.value = ITSM.config.role;
+    const usernameInput = document.getElementById('settingsUsername');
+    if (usernameInput) usernameInput.value = ITSM.config.username;
     overlay.classList.add('active');
   }
 }
@@ -294,9 +331,16 @@ async function saveSettings() {
   const repo = document.getElementById('settingsRepo').value.trim();
   const token = document.getElementById('settingsToken').value.trim();
   const orgName = document.getElementById('settingsOrg').value.trim() || 'IT Service Portal';
+  const role = document.getElementById('settingsRole')?.value || 'user';
+  const username = document.getElementById('settingsUsername')?.value.trim() || '';
 
   if (!repo || !token) {
     showToast('Repository and Token are required!', 'error');
+    return;
+  }
+
+  if (!username) {
+    showToast('GitHub Username is required!', 'error');
     return;
   }
 
@@ -321,10 +365,13 @@ async function saveSettings() {
   ITSM.config.repo = repo;
   ITSM.config.token = token;
   ITSM.config.orgName = orgName;
+  ITSM.config.role = role;
+  ITSM.config.username = username;
   hideSettings();
-  showToast('Settings saved! Connected successfully.', 'success');
+  showToast('Settings saved! Connected as ' + role.toUpperCase() + '.', 'success');
   const logo = document.querySelector('.logo-text');
   if (logo) logo.textContent = ITSM.config.orgName;
+  applyRoleUI();
   if (typeof loadPageData === 'function') loadPageData();
 }
 
@@ -334,4 +381,30 @@ function checkConfig() {
     return false;
   }
   return true;
+}
+
+// ---- Role-Based UI ----
+function applyRoleUI() {
+  const role = ITSM.config.role;
+
+  // Update role badge in nav
+  const roleBadge = document.getElementById('roleBadge');
+  if (roleBadge) {
+    const roleLabels = { admin: '🛡️ Admin', approver: '✅ Approver', user: '👤 User' };
+    const roleColors = { admin: '#c62828', approver: '#2e7d32', user: '#1565c0' };
+    roleBadge.textContent = roleLabels[role] || '👤 User';
+    roleBadge.style.background = roleColors[role] || '#1565c0';
+  }
+
+  // Show/hide nav items based on role
+  document.querySelectorAll('[data-role]').forEach(el => {
+    const allowedRoles = el.getAttribute('data-role').split(',');
+    el.style.display = allowedRoles.includes(role) ? '' : 'none';
+  });
+
+  // Show/hide elements with data-hide-role
+  document.querySelectorAll('[data-hide-role]').forEach(el => {
+    const hiddenRoles = el.getAttribute('data-hide-role').split(',');
+    el.style.display = hiddenRoles.includes(role) ? 'none' : '';
+  });
 }
