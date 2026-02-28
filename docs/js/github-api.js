@@ -164,6 +164,19 @@ const ITSM = {
       closedIssues = closedIssues.filter(i => i.user && i.user.login.toLowerCase() === u);
     }
 
+    // Approvers see their own submitted + assigned tickets
+    if (this.config.isApprover && this.config.username) {
+      const u = this.config.username.toLowerCase();
+      openIssues = openIssues.filter(i =>
+        (i.user && i.user.login.toLowerCase() === u) ||
+        (i.assignee && i.assignee.login.toLowerCase() === u)
+      );
+      closedIssues = closedIssues.filter(i =>
+        (i.user && i.user.login.toLowerCase() === u) ||
+        (i.assignee && i.assignee.login.toLowerCase() === u)
+      );
+    }
+
     const hasLabel = (issue, label) => issue.labels.some(l => l.name === label);
 
     return {

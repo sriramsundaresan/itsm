@@ -16,9 +16,9 @@
     <ul class="nav-links">
       <li><a href="index.html">Dashboard</a></li>
       <li><a href="tickets.html" class="active">Tickets</a></li>
-      <li data-role="user,admin"><a href="new-ticket.html">New Ticket</a></li>
+      <li data-role="user,approver,admin"><a href="new-ticket.html">New Ticket</a></li>
       <li data-role="approver,admin"><a href="approvals.html">Approvals</a></li>
-      <li data-role="user,admin"><a href="catalog.html">Service Catalog</a></li>
+      <li data-role="user,approver,admin"><a href="catalog.html">Service Catalog</a></li>
     </ul>
     <div class="nav-right">
       <span id="roleBadge" class="role-badge"></span>
@@ -192,10 +192,10 @@
           </div>
         `;
 
-        // Actions (admin can resolve; users can resolve their own; approvers see nothing here)
+        // Actions (admin can resolve any; users/approvers can resolve their own)
         const actions = document.getElementById('ticketActions');
-        const canResolve = ITSM.config.isAdmin || 
-          (ITSM.config.isUser && ticket.user && ticket.user.login.toLowerCase() === ITSM.config.username.toLowerCase());
+        const isOwner = ticket.user && ticket.user.login.toLowerCase() === (ITSM.config.username || '').toLowerCase();
+        const canResolve = ITSM.config.isAdmin || isOwner;
         if (isOpen && canResolve) {
           actions.innerHTML = `
             <button class="btn btn-success btn-sm" onclick="resolveTicket()">✅ Resolve Ticket</button>
