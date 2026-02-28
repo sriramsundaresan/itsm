@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tickets - IT Service Portal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <nav class="top-nav">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      <span class="logo-text">IT Service Portal</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="tickets.html" class="active">Tickets</a></li>
+      <li><a href="new-ticket.html">New Ticket</a></li>
+      <li><a href="catalog.html">Service Catalog</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="settings-btn" onclick="showSettings()" title="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h1>All Tickets</h1>
+      <p>View and manage IT service tickets</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="filter-bar">
+        <select id="filterState" onchange="loadPageData()">
+          <option value="open">Open</option>
+          <option value="closed">Closed</option>
+          <option value="all">All</option>
+        </select>
+        <select id="filterType" onchange="loadPageData()">
+          <option value="">All Types</option>
+          <option value="incident">Incidents</option>
+          <option value="change-request">Change Requests</option>
+          <option value="service-request">Service Requests</option>
+        </select>
+        <select id="filterPriority" onchange="loadPageData()">
+          <option value="">All Priorities</option>
+          <option value="priority-critical">Critical</option>
+          <option value="priority-high">High</option>
+          <option value="priority-medium">Medium</option>
+          <option value="priority-low">Low</option>
+        </select>
+        <input type="text" class="search-input" id="filterSearch" placeholder="🔍 Search tickets..." oninput="filterTable()">
+        <a href="new-ticket.html" class="btn btn-primary btn-sm">+ New Ticket</a>
+      </div>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="card">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Priority</th>
+              <th>SLA</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsBody">
+            <tr><td colspan="8" class="loading"><div class="spinner"></div>Loading tickets...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>⚙️ Portal Settings</h2>
+      <div class="form-group">
+        <label>Organization Name</label>
+        <input type="text" id="settingsOrg" placeholder="My Company IT Portal">
+      </div>
+      <div class="form-group">
+        <label>GitHub Repository <span class="required">*</span></label>
+        <input type="text" id="settingsRepo" placeholder="owner/repo">
+      </div>
+      <div class="form-group">
+        <label>GitHub Token <span class="required">*</span></label>
+        <input type="password" id="settingsToken" placeholder="ghp_...">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+        <button class="btn btn-secondary" onclick="hideSettings()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container"></div>
+
+  <script src="js/github-api.js"></script>
+  <script>
+    document.querySelector('.logo-text').textContent = ITSM.config.orgName;
+    let allTickets = [];
+
+    async function loadPageData() {
+      if (!checkConfig()) return;
+
+      const tbody = document.getElementById('ticketsBody');
+      tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="spinner"></div>Loading...</td></tr>';
+
+      const state = document.getElementById('filterState').value;
+      const typeFilter = document.getElementById('filterType').value;
+      const priorityFilter = document.getElementById('filterPriority').value;
+
+      try {
+        const labels = [typeFilter, priorityFilter].filter(Boolean).join(',');
+        
+        let tickets;
+        if (state === 'all') {
+          const [open, closed] = await Promise.all([
+            ITSM.getTickets({ state: 'open', labels }),
+            ITSM.getTickets({ state: 'closed', labels })
+          ]);
+          tickets = [...open, ...closed].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } else {
+          tickets = await ITSM.getTickets({ state, labels });
+        }
+
+        allTickets = tickets;
+        renderTable(tickets);
+      } catch (err) {
+        showToast('Error loading tickets: ' + err.message, 'error');
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading tickets</td></tr>';
+      }
+    }
+
+    function renderTable(tickets) {
+      const tbody = document.getElementById('ticketsBody');
+      if (tickets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">📭</div><h3>No tickets found</h3></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = tickets.map(t => {
+        const type = ITSM.getTicketType(t);
+        const priority = ITSM.getPriority(t);
+        const sla = ITSM.getSLAStatus(t);
+        const isOpen = t.state === 'open';
+
+        return `<tr onclick="window.location='ticket.html?id=${t.number}'" style="cursor:pointer">
+          <td><strong>#${t.number}</strong></td>
+          <td>${t.title}</td>
+          <td><span class="badge badge-${type}">${type}</span></td>
+          <td><span class="badge badge-${priority}">${priority || 'none'}</span></td>
+          <td>${sla === 'breached' ? '<span class="badge badge-breached">Breached</span>' : sla === 'warning' ? '<span class="badge badge-warning">Warning</span>' : '<span class="badge badge-low">OK</span>'}</td>
+          <td><span class="badge badge-${isOpen ? 'open' : 'closed'}">${isOpen ? 'Open' : 'Closed'}</span></td>
+          <td>${ITSM.timeAgo(t.created_at)}</td>
+          <td>${ITSM.timeAgo(t.updated_at)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function filterTable() {
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+      if (!search) { renderTable(allTickets); return; }
+      const filtered = allTickets.filter(t =>
+        t.title.toLowerCase().includes(search) ||
+        ('#' + t.number).includes(search)
+      );
+      renderTable(filtered);
+    }
+
+    loadPageData();
+  </script>
+</body>
+</html>
