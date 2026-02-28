@@ -697,3 +697,144 @@ table tr:hover { background: var(--gray-50); }
 .sla-bar-fill.green { background: var(--success); }
 .sla-bar-fill.yellow { background: var(--warning); }
 .sla-bar-fill.red { background: var(--danger); }
+
+/* ============================================
+   Approval Workflow Styles
+   ============================================ */
+
+.approval-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+
+.approval-status-banner.approval-pending {
+  background: #fff8e1;
+  border: 1px solid #ffcc02;
+}
+
+.approval-status-banner.approval-approved {
+  background: #e8f5e9;
+  border: 1px solid #4caf50;
+}
+
+.approval-status-banner.approval-rejected {
+  background: #ffebee;
+  border: 1px solid #f44336;
+}
+
+.approval-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.approval-btn-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.approval-btn-approve:hover {
+  background: #1b5e20;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.approval-btn-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #c62828;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.approval-btn-reject:hover {
+  background: #b71c1c;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Approval Queue Page */
+.approval-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 12px;
+  transition: box-shadow 0.2s;
+}
+
+.approval-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.approval-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.approval-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.approval-card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.approval-card-title a:hover {
+  color: var(--primary);
+}
+
+.approval-card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-top: 4px;
+}
+
+.approval-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  padding: 0 6px;
+  margin-left: 6px;
+}

@@ -81,6 +81,46 @@ const ITSM = {
     });
   },
 
+  async removeLabel(number, label) {
+    return this.api(`/issues/${number}/labels/${encodeURIComponent(label)}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getApprovalStatus(issue) {
+    const labels = issue.labels.map(l => l.name);
+    const isChange = labels.includes('change-request');
+    const isService = labels.includes('service-request');
+    if (!isChange && !isService) return { needsApproval: false };
+
+    const isApproved = labels.includes('approved');
+    const isRejected = labels.includes('rejected');
+    const isPending = !isApproved && !isRejected && issue.state === 'open';
+
+    return {
+      needsApproval: true,
+      type: isChange ? 'Change Request' : 'Service Request',
+      status: isApproved ? 'approved' : isRejected ? 'rejected' : 'pending',
+      isPending,
+      isApproved,
+      isRejected,
+      riskLevel: labels.find(l => l.startsWith('risk-'))?.replace('risk-', '') || 'unknown',
+      changeType: labels.find(l => ['standard-change', 'normal-change', 'emergency-change'].includes(l)) || ''
+    };
+  },
+
+  async getPendingApprovals() {
+    const [changes, services] = await Promise.all([
+      this.api('/issues?state=open&labels=change-request&per_page=100'),
+      this.api('/issues?state=open&labels=service-request&per_page=100')
+    ]);
+    const all = [...changes, ...services].filter(i => !i.pull_request);
+    return all.filter(i => {
+      const labels = i.labels.map(l => l.name);
+      return !labels.includes('approved') && !labels.includes('rejected');
+    });
+  },
+
   // ---- Dashboard Stats ----
   async getStats() {
     const [open, closed] = await Promise.all([
