@@ -1,0 +1,27 @@
+{
+  "name": "rl---agent",
+  "version": "1.0.0",
+  "description": "> Lightweight, automation-first execution layer for managing **approved cloud workloads** during SDLC phases (Sandbox, Dev, UAT).\r >\r > Uses GitHub Issues as a single operational backlog. Built on the [Service Management Specification](AdditionInformation.MD).",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sriramsundaresan/itsm.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sriramsundaresan/itsm/issues"
+  },
+  "homepage": "https://github.com/sriramsundaresan/itsm#readme",
+  "devDependencies": {
+    "@jest/globals": "^30.2.0",
+    "jest": "^30.2.0"
+  }
+}

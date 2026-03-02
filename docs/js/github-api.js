@@ -1,23 +1,97 @@
 /* ============================================
-   GitHub Issues API - ITSM Backend
+   Cloud Service Management - GitHub API Layer
+   SDLC Execution Model (Sandbox / Dev / UAT)
    ============================================ */
 
-const ITSM = {
+// SECURITY NOTE: This client-side app stores a GitHub PAT in the browser.
+// For production, implement a backend middleware/proxy that:
+//   1. Holds the token server-side
+//   2. Validates JSON schemas per request type
+//   3. Targets the fixed cloud-ops-backlog repo
+//   4. Enforces role-based access control
+// See: https://docs.github.com/en/apps/oauth-apps
+
+// ARCHITECTURAL NOTE: Per the Service Management Specification, the target
+// architecture uses webhook-based intake (forms → JSON webhook → middleware → GitHub).
+// This client-side implementation is a transitional step.
+
+const CloudOps = {
+
+  // ---- Security Utilities ----
+  _obfuscate(str) {
+    if (!str) return '';
+    return btoa(str.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ (0x42 + (i % 13)))).join(''));
+  },
+  _deobfuscate(str) {
+    if (!str) return '';
+    try {
+      const decoded = atob(str);
+      return decoded.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ (0x42 + (i % 13)))).join('');
+    } catch (e) {
+      return str;
+    }
+  },
+
+  escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  },
+
+  _rateLimits: {},
+  _checkRateLimit(action, maxPerMinute = 30) {
+    const now = Date.now();
+    if (!this._rateLimits[action]) this._rateLimits[action] = [];
+    this._rateLimits[action] = this._rateLimits[action].filter(t => now - t < 60000);
+    if (this._rateLimits[action].length >= maxPerMinute) {
+      throw new Error(`Rate limit exceeded for ${action}. Please wait before trying again.`);
+    }
+    this._rateLimits[action].push(now);
+  },
+
+  validateInput(value, fieldName, { maxLength = 2000, required = false } = {}) {
+    if (required && (!value || !value.trim())) {
+      throw new Error(`${fieldName} is required.`);
+    }
+    if (value && value.length > maxLength) {
+      throw new Error(`${fieldName} exceeds maximum length of ${maxLength} characters.`);
+    }
+    return value ? value.trim() : value;
+  },
+
+  // ---- Configuration ----
   config: {
-    get repo() { return localStorage.getItem('itsm_repo') || ''; },
-    set repo(v) { localStorage.setItem('itsm_repo', v); },
-    get token() { return localStorage.getItem('itsm_token') || ''; },
-    set token(v) { localStorage.setItem('itsm_token', v); },
-    get orgName() { return localStorage.getItem('itsm_org') || 'IT Service Portal'; },
-    set orgName(v) { localStorage.setItem('itsm_org', v); },
-    get role() { return localStorage.getItem('itsm_role') || 'user'; },
-    set role(v) { localStorage.setItem('itsm_role', v); },
-    get username() { return localStorage.getItem('itsm_username') || ''; },
-    set username(v) { localStorage.setItem('itsm_username', v); },
+    get repo() { return localStorage.getItem('cloudops_repo') || ''; },
+    set repo(v) { localStorage.setItem('cloudops_repo', v); },
+    get token() {
+      const stored = localStorage.getItem('cloudops_token') || '';
+      return CloudOps._deobfuscate(stored);
+    },
+    set token(v) {
+      localStorage.setItem('cloudops_token', CloudOps._obfuscate(v));
+    },
+    get orgName() { return localStorage.getItem('cloudops_org') || 'Cloud Service Management'; },
+    set orgName(v) { localStorage.setItem('cloudops_org', v); },
+    get role() { return localStorage.getItem('cloudops_role') || 'user'; },
+    set role(v) { localStorage.setItem('cloudops_role', v); },
+    get username() { return localStorage.getItem('cloudops_username') || ''; },
+    set username(v) { localStorage.setItem('cloudops_username', v); },
     get isConfigured() { return !!(this.repo && this.token); },
     get isAdmin() { return this.role === 'admin'; },
-    get isApprover() { return this.role === 'approver'; },
     get isUser() { return this.role === 'user'; }
+  },
+
+  // ---- Request Type Definitions ----
+  REQUEST_TYPES: {
+    environment:          { label: 'environment',         prefix: 'ENV',    name: 'Environment Provisioning', icon: '🏗️', badge: 'env' },
+    iam:                  { label: 'iam',                  prefix: 'IAM',    name: 'Identity & Access',        icon: '🔑', badge: 'iam' },
+    network:              { label: 'network',              prefix: 'NET',    name: 'Network & Connectivity',   icon: '🌐', badge: 'net' },
+    platform:             { label: 'platform',             prefix: 'PLAT',   name: 'Platform Services',        icon: '⚙️',  badge: 'plat' },
+    'security-exception': { label: 'security-exception',   prefix: 'SEC-EX', name: 'Security Exception',       icon: '🛡️', badge: 'secex' }
   },
 
   // ---- API Helpers ----
@@ -39,8 +113,8 @@ const ITSM = {
     return res.status === 204 ? null : res.json();
   },
 
-  // ---- Issues (Tickets) ----
-  async getTickets(filters = {}) {
+  // ---- Issues (Requests) ----
+  async getRequests(filters = {}) {
     const params = new URLSearchParams({
       state: filters.state || 'open',
       per_page: '50',
@@ -49,18 +123,21 @@ const ITSM = {
     });
     if (filters.labels) params.set('labels', filters.labels);
     const issues = await this.api(`/issues?${params}`);
-    return issues.filter(i => !i.pull_request); // exclude PRs
+    return issues.filter(i => !i.pull_request);
   },
 
-  async getTicket(number) {
+  async getRequest(number) {
     return this.api(`/issues/${number}`);
   },
 
-  async getTicketComments(number) {
+  async getRequestComments(number) {
     return this.api(`/issues/${number}/comments`);
   },
 
-  async createTicket(title, body, labels = []) {
+  async createRequest(title, body, labels = []) {
+    this._checkRateLimit('createRequest', 10);
+    this.validateInput(title, 'Title', { maxLength: 256, required: true });
+    this.validateInput(body, 'Description', { maxLength: 65536, required: true });
     return this.api('/issues', {
       method: 'POST',
       body: JSON.stringify({ title, body, labels })
@@ -68,13 +145,15 @@ const ITSM = {
   },
 
   async addComment(number, body) {
+    this._checkRateLimit('addComment', 20);
+    this.validateInput(body, 'Comment', { maxLength: 65536, required: true });
     return this.api(`/issues/${number}/comments`, {
       method: 'POST',
       body: JSON.stringify({ body })
     });
   },
 
-  async closeTicket(number) {
+  async closeRequest(number) {
     return this.api(`/issues/${number}`, {
       method: 'PATCH',
       body: JSON.stringify({ state: 'closed' })
@@ -94,61 +173,19 @@ const ITSM = {
     });
   },
 
-  async getApprovalStatus(issue) {
-    const labels = issue.labels.map(l => l.name);
-    const isChange = labels.includes('change-request');
-    const isService = labels.includes('service-request');
-    if (!isChange && !isService) return { needsApproval: false };
-
-    const isApproved = labels.includes('approved');
-    const isRejected = labels.includes('rejected');
-    const isPending = !isApproved && !isRejected && issue.state === 'open';
-
-    return {
-      needsApproval: true,
-      type: isChange ? 'Change Request' : 'Service Request',
-      status: isApproved ? 'approved' : isRejected ? 'rejected' : 'pending',
-      isPending,
-      isApproved,
-      isRejected,
-      riskLevel: labels.find(l => l.startsWith('risk-'))?.replace('risk-', '') || 'unknown',
-      changeType: labels.find(l => ['standard-change', 'normal-change', 'emergency-change'].includes(l)) || ''
-    };
-  },
-
-  async getPendingApprovals() {
-    const [changes, services] = await Promise.all([
-      this.api('/issues?state=open&labels=change-request&per_page=100'),
-      this.api('/issues?state=open&labels=service-request&per_page=100')
-    ]);
-    const all = [...changes, ...services].filter(i => !i.pull_request);
-    const pending = all.filter(i => {
-      const labels = i.labels.map(l => l.name);
-      return !labels.includes('approved') && !labels.includes('rejected');
-    });
-
-    // Approvers only see items assigned to them
-    if (this.config.isApprover && this.config.username) {
-      return pending.filter(i =>
-        i.assignee && i.assignee.login.toLowerCase() === this.config.username.toLowerCase()
-      );
-    }
-    return pending;
-  },
-
-  // Get tickets filtered by role
-  async getMyTickets(filters = {}) {
-    const tickets = await this.getTickets(filters);
+  // Get requests filtered by role
+  async getMyRequests(filters = {}) {
+    const requests = await this.getRequests(filters);
     if (this.config.isUser && this.config.username) {
-      return tickets.filter(t =>
+      return requests.filter(t =>
         t.user && t.user.login.toLowerCase() === this.config.username.toLowerCase()
       );
     }
-    return tickets;
+    return requests;
   },
 
-  // Get stats filtered by role
-  async getMyStats() {
+  // Get dashboard stats
+  async getStats() {
     const [open, closed] = await Promise.all([
       this.api('/issues?state=open&per_page=100'),
       this.api('/issues?state=closed&per_page=100')
@@ -157,24 +194,10 @@ const ITSM = {
     let openIssues = open.filter(i => !i.pull_request);
     let closedIssues = closed.filter(i => !i.pull_request);
 
-    // Users only see their own tickets
     if (this.config.isUser && this.config.username) {
       const u = this.config.username.toLowerCase();
       openIssues = openIssues.filter(i => i.user && i.user.login.toLowerCase() === u);
       closedIssues = closedIssues.filter(i => i.user && i.user.login.toLowerCase() === u);
-    }
-
-    // Approvers see their own submitted + assigned tickets
-    if (this.config.isApprover && this.config.username) {
-      const u = this.config.username.toLowerCase();
-      openIssues = openIssues.filter(i =>
-        (i.user && i.user.login.toLowerCase() === u) ||
-        (i.assignee && i.assignee.login.toLowerCase() === u)
-      );
-      closedIssues = closedIssues.filter(i =>
-        (i.user && i.user.login.toLowerCase() === u) ||
-        (i.assignee && i.assignee.login.toLowerCase() === u)
-      );
     }
 
     const hasLabel = (issue, label) => issue.labels.some(l => l.name === label);
@@ -183,35 +206,43 @@ const ITSM = {
       total: openIssues.length + closedIssues.length,
       open: openIssues.length,
       closed: closedIssues.length,
-      incidents: openIssues.filter(i => hasLabel(i, 'incident')).length,
-      changes: openIssues.filter(i => hasLabel(i, 'change-request')).length,
-      serviceRequests: openIssues.filter(i => hasLabel(i, 'service-request')).length,
-      critical: openIssues.filter(i => hasLabel(i, 'priority-critical')).length,
-      high: openIssues.filter(i => hasLabel(i, 'priority-high')).length,
-      slaWarning: openIssues.filter(i => hasLabel(i, 'sla-warning')).length,
-      slaBreached: openIssues.filter(i => hasLabel(i, 'sla-breached')).length,
-      recentTickets: openIssues.slice(0, 10)
+      environment: openIssues.filter(i => hasLabel(i, 'environment')).length,
+      iam: openIssues.filter(i => hasLabel(i, 'iam')).length,
+      network: openIssues.filter(i => hasLabel(i, 'network')).length,
+      platform: openIssues.filter(i => hasLabel(i, 'platform')).length,
+      securityException: openIssues.filter(i => hasLabel(i, 'security-exception')).length,
+      sandbox: openIssues.filter(i => hasLabel(i, 'sandbox')).length,
+      dev: openIssues.filter(i => hasLabel(i, 'dev')).length,
+      uat: openIssues.filter(i => hasLabel(i, 'uat')).length,
+      highCost: openIssues.filter(i => hasLabel(i, 'high-cost')).length,
+      restricted: openIssues.filter(i => hasLabel(i, 'restricted')).length,
+      recentRequests: openIssues.slice(0, 10)
     };
   },
 
   // ---- Helpers ----
-  getTicketType(issue) {
-    if (issue.labels.some(l => l.name === 'incident')) return 'incident';
-    if (issue.labels.some(l => l.name === 'change-request')) return 'change';
-    if (issue.labels.some(l => l.name === 'service-request')) return 'service';
+  getRequestType(issue) {
+    for (const [key, def] of Object.entries(this.REQUEST_TYPES)) {
+      if (issue.labels.some(l => l.name === def.label)) return key;
+    }
     return 'other';
   },
 
-  getPriority(issue) {
-    const priorityLabels = ['priority-critical', 'priority-high', 'priority-medium', 'priority-low'];
-    const found = issue.labels.find(l => priorityLabels.includes(l.name));
-    return found ? found.name.replace('priority-', '') : 'none';
+  getRequestTypeDef(issue) {
+    const type = this.getRequestType(issue);
+    return this.REQUEST_TYPES[type] || { label: 'other', prefix: '???', name: 'Other', icon: '📋', badge: 'other' };
   },
 
-  getSLAStatus(issue) {
-    if (issue.labels.some(l => l.name === 'sla-breached')) return 'breached';
-    if (issue.labels.some(l => l.name === 'sla-warning')) return 'warning';
-    return 'ok';
+  getEnvironment(issue) {
+    const envLabels = ['sandbox', 'dev', 'uat'];
+    const found = issue.labels.find(l => envLabels.includes(l.name));
+    return found ? found.name : 'none';
+  },
+
+  getDataClassification(issue) {
+    const classes = ['public', 'confidential', 'restricted'];
+    const found = issue.labels.find(l => classes.includes(l.name));
+    return found ? found.name : 'none';
   },
 
   formatDate(dateStr) {
@@ -233,76 +264,114 @@ const ITSM = {
     return 'just now';
   },
 
-  // ---- Build Issue Body (Markdown) ----
-  buildIncidentBody(data) {
-    return `## Incident Report
-
-**Severity:** ${data.severity}
-**Affected Service:** ${data.service}
-**Users Affected:** ${data.usersAffected || 'Unknown'}
-**Start Time:** ${data.startTime || 'Unknown'}
-
-### Description
-${data.description}
-
-### Business Impact
-${data.impact || 'Not specified'}
-
-### Workaround Available
-${data.workaround || 'None'}
-
-### Recent Changes
-${data.recentChanges || 'None known'}
-
----
-*Submitted via ITSM Portal*`;
+  // ---- Auto-Generate Issue Titles (per spec convention) ----
+  generateTitle(type, data) {
+    switch (type) {
+      case 'environment':        return `ENV | ${data.applicationName} | ${data.region}`;
+      case 'iam':                return `IAM | ${data.applicationName}`;
+      case 'network':            return `NET | ${data.applicationName}`;
+      case 'platform':           return `PLAT | ${data.applicationName}`;
+      case 'security-exception': return `SEC-EX | ${data.applicationName}`;
+      default:                   return data.applicationName || 'Untitled Request';
+    }
   },
 
-  buildChangeBody(data) {
-    return `## Change Request
+  // ---- Build Issue Bodies (Markdown) ----
+  buildEnvBody(data) {
+    return `## Environment Provisioning Request
 
-**Change Type:** ${data.changeType}
-**Risk Level:** ${data.riskLevel}
-**Target Environment:** ${data.environment}
-**Planned Date:** ${data.plannedDate || 'TBD'}
+**Application Name:** ${data.applicationName}
+**Business Owner:** ${data.businessOwner}
+**Technical Owner:** ${data.technicalOwner}
+**Cost Center:** ${data.costCenter}
+**Environment Type:** ${data.environmentType}
+**Region:** ${data.region}
+**Data Classification:** ${data.dataClassification}
+**Criticality Tier:** ${data.criticalityTier}
+**Internet Exposure:** ${data.internetExposure}
+**RTO / RPO:** ${data.rtoRpo || 'Not specified'}
+**Cloud Frontdoor Reference ID:** ${data.cfdReferenceId || 'N/A'}
+**Expected Go-Live Date:** ${data.goLiveDate || 'TBD'}
 
-### Description
-${data.description}
-
-### Justification
-${data.justification || 'Not specified'}
-
-### Impact Assessment
-${data.impact || 'Not specified'}
-
-### Rollback Plan
-${data.rollbackPlan || 'Not specified'}
-
-### Testing Completed
-${data.testing || 'Not specified'}
+### Notes
+${data.notes || 'None'}
 
 ---
-*Submitted via ITSM Portal*`;
+*Submitted via Cloud Service Management Portal*
+*This request is only applicable after a positive Cloud Frontdoor outcome.*`;
   },
 
-  buildServiceRequestBody(data) {
-    return `## Service Request
+  buildIAMBody(data) {
+    return `## Identity & Access Request (Non-Human)
 
-**Category:** ${data.category}
-**Urgency:** ${data.urgency}
-**Cost Center:** ${data.costCenter || 'N/A'}
-
-### Description
-${data.description}
+**Application Name:** ${data.applicationName}
+**Identity Type:** ${data.identityType}
+**Scope:** ${data.scope}
+**Role Requested:** ${data.roleRequested}
+**Temporary Access:** ${data.temporaryAccess}
+**Duration:** ${data.duration || 'N/A'}
 
 ### Business Justification
-${data.justification || 'Not specified'}
-
-### Duration Needed
-${data.duration || 'Permanent'}
+${data.businessJustification || 'Not specified'}
 
 ---
-*Submitted via ITSM Portal*`;
+*Submitted via Cloud Service Management Portal*`;
+  },
+
+  buildNetBody(data) {
+    return `## Network & Connectivity Request
+
+**Application Name:** ${data.applicationName}
+**Request Type:** ${data.requestType}
+**Source:** ${data.source}
+**Destination:** ${data.destination}
+**Protocol / Port:** ${data.protocolPort}
+**Public Exposure:** ${data.publicExposure}
+**Third-Party Integration:** ${data.thirdPartyIntegration}
+
+### Notes
+${data.notes || 'None'}
+
+---
+*Submitted via Cloud Service Management Portal*`;
+  },
+
+  buildPlatBody(data) {
+    return `## Platform Services Request
+
+**Application Name:** ${data.applicationName}
+**Service Type:** ${data.serviceType}
+**SKU:** ${data.sku}
+**Estimated Monthly Cost:** ${data.estimatedCost || 'TBD'}
+**Backup Required:** ${data.backupRequired}
+**Monitoring Required:** ${data.monitoringRequired}
+
+### Notes
+${data.notes || 'None'}
+
+---
+*Submitted via Cloud Service Management Portal*`;
+  },
+
+  buildSecExBody(data) {
+    return `## Security Exception Request
+
+**Application Name:** ${data.applicationName}
+**Policy / Control Violated:** ${data.policyViolated}
+**Expiry Date:** ${data.expiryDate}
+
+### Business Justification
+${data.businessJustification}
+
+### Compensating Controls
+${data.compensatingControls || 'Not specified'}
+
+### Risk Acknowledgement
+${data.riskAcknowledgement ? '✅ Risk acknowledged by submitter' : '❌ Risk not acknowledged'}
+
+---
+*Submitted via Cloud Service Management Portal*
+*⚠️ No permanent security exceptions allowed. This exception expires on ${data.expiryDate}.*`;
   }
 };
 
@@ -325,13 +394,15 @@ function showToast(message, type = 'info') {
 function showSettings() {
   const overlay = document.getElementById('settingsModal');
   if (overlay) {
-    document.getElementById('settingsRepo').value = ITSM.config.repo;
-    document.getElementById('settingsToken').value = ITSM.config.token;
-    document.getElementById('settingsOrg').value = ITSM.config.orgName;
+    document.getElementById('settingsRepo').value = CloudOps.config.repo;
+    const tokenInput = document.getElementById('settingsToken');
+    tokenInput.value = '';
+    tokenInput.placeholder = CloudOps.config.token ? '••••••••••••••••  (saved — enter new value to change)' : 'ghp_...';
+    document.getElementById('settingsOrg').value = CloudOps.config.orgName;
     const roleSelect = document.getElementById('settingsRole');
-    if (roleSelect) roleSelect.value = ITSM.config.role;
+    if (roleSelect) roleSelect.value = CloudOps.config.role;
     const usernameInput = document.getElementById('settingsUsername');
-    if (usernameInput) usernameInput.value = ITSM.config.username;
+    if (usernameInput) usernameInput.value = CloudOps.config.username;
     overlay.classList.add('active');
   }
 }
@@ -342,80 +413,65 @@ function hideSettings() {
 
 async function saveSettings() {
   const repo = document.getElementById('settingsRepo').value.trim();
-  const token = document.getElementById('settingsToken').value.trim();
-  const orgName = document.getElementById('settingsOrg').value.trim() || 'IT Service Portal';
+  const newToken = document.getElementById('settingsToken').value.trim();
+  const orgName = document.getElementById('settingsOrg').value.trim() || 'Cloud Service Management';
   const role = document.getElementById('settingsRole')?.value || 'user';
   const username = document.getElementById('settingsUsername')?.value.trim() || '';
+  const token = newToken || CloudOps.config.token;
 
-  if (!repo || !token) {
-    showToast('Repository and Token are required!', 'error');
-    return;
+  if (!repo || !token) { showToast('Repository and Token are required!', 'error'); return; }
+  if (!username) { showToast('GitHub Username is required!', 'error'); return; }
+  if (newToken && !/^(ghp_|github_pat_|gho_)[A-Za-z0-9_]+$/.test(newToken)) {
+    showToast('Invalid token format. GitHub tokens start with ghp_, github_pat_, or gho_.', 'error'); return;
+  }
+  if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(repo)) {
+    showToast('Invalid repository format. Use owner/repo (e.g. myorg/cloud-ops-backlog).', 'error'); return;
   }
 
-  if (!username) {
-    showToast('GitHub Username is required!', 'error');
-    return;
-  }
-
-  // Test connection before saving
   try {
-    const res = await fetch(`https://api.github.com/repos/${repo}`, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'Authorization': `Bearer ${token}`
-      }
+    const res = await fetch(`https://api.github.com/repos/${encodeURI(repo)}`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json', 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      showToast('Connection failed: ' + (err.message || `HTTP ${res.status}`), 'error');
-      return;
+      showToast('Connection failed: ' + (err.message || `HTTP ${res.status}`), 'error'); return;
     }
-  } catch (e) {
-    showToast('Connection failed: ' + e.message, 'error');
-    return;
-  }
+  } catch (e) { showToast('Connection failed: ' + e.message, 'error'); return; }
 
-  ITSM.config.repo = repo;
-  ITSM.config.token = token;
-  ITSM.config.orgName = orgName;
-  ITSM.config.role = role;
-  ITSM.config.username = username;
+  CloudOps.config.repo = repo;
+  CloudOps.config.token = token;
+  CloudOps.config.orgName = orgName;
+  CloudOps.config.role = role;
+  CloudOps.config.username = username;
   hideSettings();
-  showToast('Settings saved! Connected as ' + role.toUpperCase() + '.', 'success');
+  showToast('Settings saved! Connected as ' + CloudOps.escapeHtml(role.toUpperCase()) + '.', 'success');
   const logo = document.querySelector('.logo-text');
-  if (logo) logo.textContent = ITSM.config.orgName;
+  if (logo) logo.textContent = CloudOps.config.orgName;
   applyRoleUI();
   if (typeof loadPageData === 'function') loadPageData();
 }
 
 function checkConfig() {
-  if (!ITSM.config.isConfigured) {
-    showSettings();
-    return false;
-  }
+  if (!CloudOps.config.isConfigured) { showSettings(); return false; }
   return true;
 }
 
-// ---- Role-Based UI ----
+// ---- Role-Based UI (simplified: user + admin only) ----
 function applyRoleUI() {
-  const role = ITSM.config.role;
-
-  // Update role badge in nav
+  const role = CloudOps.config.role;
   const roleBadge = document.getElementById('roleBadge');
   if (roleBadge) {
-    const roleLabels = { admin: '🛡️ Admin', approver: '✅ Approver', user: '👤 User' };
-    const roleColors = { admin: '#c62828', approver: '#2e7d32', user: '#1565c0' };
+    const roleLabels = { admin: '🛡️ Cloud Ops', user: '👤 User' };
+    const roleColors = { admin: '#c62828', user: '#1565c0' };
     roleBadge.textContent = roleLabels[role] || '👤 User';
     roleBadge.style.background = roleColors[role] || '#1565c0';
   }
 
-  // Show/hide nav items based on role
   document.querySelectorAll('[data-role]').forEach(el => {
     const allowedRoles = el.getAttribute('data-role').split(',');
     el.style.display = allowedRoles.includes(role) ? '' : 'none';
   });
 
-  // Show/hide elements with data-hide-role
   document.querySelectorAll('[data-hide-role]').forEach(el => {
     const hiddenRoles = el.getAttribute('data-hide-role').split(',');
     el.style.display = hiddenRoles.includes(role) ? 'none' : '';

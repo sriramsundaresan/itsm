@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Service Catalog - IT Service Portal</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://api.github.com; img-src 'self' data:; font-src 'self';">
+  <title>Service Catalog - Cloud Service Management</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,14 +12,13 @@
   <nav class="top-nav">
     <div class="logo">
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-      <span class="logo-text">IT Service Portal</span>
+      <span class="logo-text">Cloud Service Management</span>
     </div>
     <ul class="nav-links">
       <li><a href="index.html">Dashboard</a></li>
-      <li><a href="tickets.html">Tickets</a></li>
-      <li data-role="user,approver,admin"><a href="new-ticket.html">New Ticket</a></li>
-      <li data-role="approver,admin"><a href="approvals.html">Approvals</a></li>
-      <li data-role="user,approver,admin"><a href="catalog.html" class="active">Service Catalog</a></li>
+      <li><a href="tickets.html">Requests</a></li>
+      <li><a href="new-ticket.html">New Request</a></li>
+      <li><a href="catalog.html" class="active">Service Catalog</a></li>
     </ul>
     <div class="nav-right">
       <span id="roleBadge" class="role-badge"></span>
@@ -31,239 +31,180 @@
   <div class="main-content">
     <div class="page-header">
       <h1>Service Catalog</h1>
-      <p>Browse available IT services and request what you need</p>
+      <p>Only <strong>five standardized request types</strong> are supported — SDLC cloud execution for approved workloads (Sandbox / Dev / UAT)</p>
     </div>
 
-    <!-- Compute -->
-    <div class="card">
-      <div class="card-header">
-        <h2>💻 Compute Services</h2>
-      </div>
-      <div class="catalog-grid">
-        <div class="catalog-item">
-          <div class="cat-icon">🖥️</div>
-          <h3>Virtual Machine</h3>
-          <p>Provision Windows or Linux VMs on Azure with your required specs.</p>
-          <div class="cat-meta">
-            <span>SLA: 2 business days</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">🚀</div>
-          <h3>App Service</h3>
-          <p>Deploy web apps, APIs, or mobile backends on Azure App Service.</p>
-          <div class="cat-meta">
-            <span>SLA: 1 business day</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">☸️</div>
-          <h3>Kubernetes Cluster</h3>
-          <p>Azure Kubernetes Service (AKS) cluster for container workloads.</p>
-          <div class="cat-meta">
-            <span>SLA: 3 business days</span>
-            <span>Requires approval</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
+    <!-- Guardrail — Spec §2 Explicit Guardrail -->
+    <div class="setup-banner" style="display:flex;background:#fff3cd;border:1px solid #ffc107;color:#664d03;margin-bottom:20px;">
+      <div>
+        <h3>⚠️ Cloud Frontdoor Guardrail</h3>
+        <p>This catalog is only applicable <strong>after</strong> a workload has received a positive Cloud Frontdoor outcome. Cloud Frontdoor remains the system of record for cloud suitability, onboarding, and risk decisions. This model operationalizes execution once those decisions are made.</p>
       </div>
     </div>
 
-    <!-- Database -->
+    <!-- ======== 6.1 Environment Provisioning Request ======== -->
     <div class="card">
       <div class="card-header">
-        <h2>🗄️ Database Services</h2>
+        <h2>🏗️ 6.1 Environment Provisioning Request</h2>
       </div>
-      <div class="catalog-grid">
-        <div class="catalog-item">
-          <div class="cat-icon">💾</div>
-          <h3>Azure SQL Database</h3>
-          <p>Managed SQL database with built-in HA, backups, and scaling.</p>
-          <div class="cat-meta">
-            <span>SLA: 2 business days</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">🌿</div>
-          <h3>Cosmos DB</h3>
-          <p>Globally distributed NoSQL database for any scale.</p>
-          <div class="cat-meta">
-            <span>SLA: 2 business days</span>
-            <span>Requires approval</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">⚡</div>
-          <h3>Azure Cache for Redis</h3>
-          <p>In-memory data store for caching and session management.</p>
-          <div class="cat-meta">
-            <span>SLA: 1 business day</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+      <p style="color:var(--gray-600);margin:0 0 8px;font-size:14px;"><strong>Purpose:</strong> SDLC environment execution only</p>
+      <div style="background:#fff3cd;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#664d03;">
+        <strong>Guardrails:</strong> Non‑production only (Sandbox / Dev / UAT) · Requires prior Cloud Frontdoor approval (informational reference)
+      </div>
+      <div style="margin-bottom:16px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Key Fields</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;">
+          <span class="badge badge-env">Application Name</span>
+          <span class="badge badge-env">Business Owner</span>
+          <span class="badge badge-env">Technical Owner</span>
+          <span class="badge badge-env">Cost Center</span>
+          <span class="badge badge-env">Environment Type (Sandbox / Dev / UAT)</span>
+          <span class="badge badge-env">Region</span>
+          <span class="badge badge-env">Data Classification</span>
+          <span class="badge badge-env">Criticality Tier</span>
+          <span class="badge badge-env">Internet Exposure (Yes / No)</span>
+          <span class="badge badge-env">RTO / RPO</span>
+          <span class="badge" style="background:#f5f5f5;color:#666;border:1px solid #ddd;">Cloud Frontdoor Reference ID (optional)</span>
+          <span class="badge" style="background:#f5f5f5;color:#666;border:1px solid #ddd;">Expected Go‑Live Date</span>
+          <span class="badge" style="background:#f5f5f5;color:#666;border:1px solid #ddd;">Notes</span>
         </div>
       </div>
+      <a href="new-ticket.html?type=environment" class="btn btn-primary btn-sm">🏗️ Submit Environment Request</a>
     </div>
 
-    <!-- Networking -->
+    <!-- ======== 6.2 Identity & Access Request (Non‑Human) ======== -->
     <div class="card">
       <div class="card-header">
-        <h2>🌐 Networking Services</h2>
+        <h2>🔑 6.2 Identity & Access Request (Non‑Human)</h2>
       </div>
-      <div class="catalog-grid">
-        <div class="catalog-item">
-          <div class="cat-icon">🔗</div>
-          <h3>Virtual Network / Subnet</h3>
-          <p>Azure VNet, subnets, NSGs, and peering configuration.</p>
-          <div class="cat-meta">
-            <span>SLA: 1 business day</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">🔒</div>
-          <h3>VPN / ExpressRoute</h3>
-          <p>Site-to-site VPN or ExpressRoute for hybrid connectivity.</p>
-          <div class="cat-meta">
-            <span>SLA: 5 business days</span>
-            <span>Requires approval</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">🛡️</div>
-          <h3>Azure Firewall / WAF</h3>
-          <p>Network security with Azure Firewall or Web Application Firewall.</p>
-          <div class="cat-meta">
-            <span>SLA: 3 business days</span>
-            <span>Requires approval</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+      <p style="color:var(--gray-600);margin:0 0 8px;font-size:14px;"><strong>Purpose:</strong> Workload‑level identity enablement</p>
+      <div style="margin-bottom:12px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Scope</h4>
+        <div style="display:flex;gap:8px;font-size:13px;">
+          <span class="badge badge-iam">Managed Identity</span>
+          <span class="badge badge-iam">Service Principal</span>
         </div>
       </div>
+      <div style="margin-bottom:16px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Key Fields</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;">
+          <span class="badge badge-iam">Application Name</span>
+          <span class="badge badge-iam">Identity Type</span>
+          <span class="badge badge-iam">Scope (Subscription / Resource Group)</span>
+          <span class="badge badge-iam">Role Requested</span>
+          <span class="badge badge-iam">Temporary Access (Yes / No)</span>
+          <span class="badge" style="background:#f5f5f5;color:#666;border:1px solid #ddd;">Duration (if temporary)</span>
+          <span class="badge badge-iam">Business Justification</span>
+        </div>
+      </div>
+      <a href="new-ticket.html?type=iam" class="btn btn-primary btn-sm">🔑 Submit IAM Request</a>
     </div>
 
-    <!-- Identity & Access -->
+    <!-- ======== 6.3 Network & Connectivity Request ======== -->
     <div class="card">
       <div class="card-header">
-        <h2>🔐 Identity & Access</h2>
+        <h2>🌐 6.3 Network & Connectivity Request</h2>
       </div>
-      <div class="catalog-grid">
-        <div class="catalog-item">
-          <div class="cat-icon">👤</div>
-          <h3>New User Account</h3>
-          <p>Create Entra ID (Azure AD) account with appropriate role assignments.</p>
-          <div class="cat-meta">
-            <span>SLA: 1 business day</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">🔑</div>
-          <h3>Access Permission Change</h3>
-          <p>Modify RBAC roles, group memberships, or subscription access.</p>
-          <div class="cat-meta">
-            <span>SLA: 4 hours</span>
-            <span>Manager approval</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">📱</div>
-          <h3>MFA / Conditional Access</h3>
-          <p>Configure MFA enrollment or conditional access policies.</p>
-          <div class="cat-meta">
-            <span>SLA: 1 business day</span>
-            <span>Security review</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+      <p style="color:var(--gray-600);margin:0 0 8px;font-size:14px;"><strong>Purpose:</strong> Controlled connectivity enablement</p>
+      <div style="margin-bottom:12px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Request Types</h4>
+        <div style="display:flex;gap:8px;font-size:13px;">
+          <span class="badge badge-net">Private Endpoint</span>
+          <span class="badge badge-net">Firewall Rule</span>
+          <span class="badge badge-net">API Exposure</span>
         </div>
       </div>
+      <div style="margin-bottom:16px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Key Fields</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;">
+          <span class="badge badge-net">Application Name</span>
+          <span class="badge badge-net">Source / Destination</span>
+          <span class="badge badge-net">Protocol / Port</span>
+          <span class="badge badge-net">Public Exposure (Yes / No)</span>
+          <span class="badge badge-net">Third‑Party Integration (Yes / No)</span>
+        </div>
+      </div>
+      <a href="new-ticket.html?type=network" class="btn btn-primary btn-sm">🌐 Submit Network Request</a>
     </div>
 
-    <!-- Microsoft 365 -->
+    <!-- ======== 6.4 Platform Services Request ======== -->
     <div class="card">
       <div class="card-header">
-        <h2>📧 Microsoft 365</h2>
+        <h2>⚙️ 6.4 Platform Services Request</h2>
       </div>
-      <div class="catalog-grid">
-        <div class="catalog-item">
-          <div class="cat-icon">📬</div>
-          <h3>Email / Mailbox</h3>
-          <p>New mailbox, shared mailbox, or distribution list setup.</p>
-          <div class="cat-meta">
-            <span>SLA: 4 hours</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">💬</div>
-          <h3>Teams Channel/Team</h3>
-          <p>New Teams workspace, channels, or guest access configuration.</p>
-          <div class="cat-meta">
-            <span>SLA: 4 hours</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
-        </div>
-        <div class="catalog-item">
-          <div class="cat-icon">📁</div>
-          <h3>SharePoint Site</h3>
-          <p>New SharePoint site, document library, or permissions update.</p>
-          <div class="cat-meta">
-            <span>SLA: 1 business day</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+      <p style="color:var(--gray-600);margin:0 0 8px;font-size:14px;"><strong>Purpose:</strong> Standard service provisioning</p>
+      <div style="margin-bottom:12px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Supported Services</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:13px;">
+          <span class="badge badge-plat">Database</span>
+          <span class="badge badge-plat">Storage</span>
+          <span class="badge badge-plat">Queue</span>
+          <span class="badge badge-plat">Cache</span>
+          <span class="badge badge-plat">AI / ML Services</span>
         </div>
       </div>
+      <div style="margin-bottom:16px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Key Fields</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;">
+          <span class="badge badge-plat">Application Name</span>
+          <span class="badge badge-plat">Service Type</span>
+          <span class="badge badge-plat">SKU (Standard / Premium / Custom)</span>
+          <span class="badge badge-plat">Estimated Monthly Cost</span>
+          <span class="badge badge-plat">Backup Required (Yes / No)</span>
+          <span class="badge badge-plat">Monitoring Required (Yes / No)</span>
+        </div>
+      </div>
+      <a href="new-ticket.html?type=platform" class="btn btn-primary btn-sm">⚙️ Submit Platform Request</a>
     </div>
 
-    <!-- DevOps -->
+    <!-- ======== 6.5 Security Exception Request ======== -->
     <div class="card">
       <div class="card-header">
-        <h2>🔧 DevOps & Tooling</h2>
+        <h2>🛡️ 6.5 Security Exception Request</h2>
       </div>
-      <div class="catalog-grid">
-        <div class="catalog-item">
-          <div class="cat-icon">🐙</div>
-          <h3>GitHub Repository</h3>
-          <p>New repo with branch policies, CI/CD pipelines, and team access.</p>
-          <div class="cat-meta">
-            <span>SLA: 4 hours</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+      <p style="color:var(--gray-600);margin:0 0 8px;font-size:14px;"><strong>Purpose:</strong> Temporary deviation from enforced policies</p>
+      <div style="background:#f8d7da;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#721c24;">
+        <strong>Rule:</strong> No permanent security exceptions allowed. Expiry date is mandatory.
+      </div>
+      <div style="margin-bottom:16px;">
+        <h4 style="font-size:13px;color:var(--gray-500);margin:0 0 6px;">Key Fields</h4>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;">
+          <span class="badge badge-secex">Policy / Control Violated</span>
+          <span class="badge badge-secex">Business Justification</span>
+          <span class="badge badge-secex">Compensating Controls</span>
+          <span class="badge badge-secex">Expiry Date (Mandatory)</span>
+          <span class="badge badge-secex">Risk Acknowledgement</span>
         </div>
-        <div class="catalog-item">
-          <div class="cat-icon">🚀</div>
-          <h3>CI/CD Pipeline</h3>
-          <p>GitHub Actions or Azure DevOps pipeline setup for your project.</p>
-          <div class="cat-meta">
-            <span>SLA: 2 business days</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+      </div>
+      <a href="new-ticket.html?type=security-exception" class="btn btn-danger btn-sm">🛡️ Submit Security Exception</a>
+    </div>
+
+    <!-- ======== Scope Boundary (Spec §4 & §13) ======== -->
+    <div class="card" style="background:#f8f9fa;">
+      <div class="card-header">
+        <h2>📋 Scope Boundary</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:14px;">
+        <div>
+          <h4 style="color:var(--primary);margin:0 0 8px;">✅ In Scope</h4>
+          <ul style="margin:0;padding-left:20px;line-height:1.8;">
+            <li>SDLC cloud execution requests (Sandbox, Dev, UAT)</li>
+            <li>Non‑human IAM at workload level</li>
+            <li>Network connectivity enablement</li>
+            <li>Standard platform services provisioning</li>
+            <li>Time‑bound security exceptions (execution only)</li>
+          </ul>
         </div>
-        <div class="catalog-item">
-          <div class="cat-icon">📊</div>
-          <h3>Monitoring & Alerts</h3>
-          <p>Azure Monitor, Application Insights, or Log Analytics setup.</p>
-          <div class="cat-meta">
-            <span>SLA: 2 business days</span>
-            <span>Standard</span>
-          </div>
-          <a href="new-ticket.html?type=service" class="btn btn-primary btn-sm" style="margin-top:12px;width:100%;">Request</a>
+        <div>
+          <h4 style="color:#c62828;margin:0 0 8px;">❌ Explicitly Out of Scope</h4>
+          <ul style="margin:0;padding-left:20px;line-height:1.8;">
+            <li>Cloud suitability decisions (Cloud Frontdoor)</li>
+            <li>Experimentation vs Production pathway</li>
+            <li>Production environment provisioning</li>
+            <li>User IAM and break‑glass access</li>
+            <li>Incident and change management</li>
+            <li>Regulatory risk acceptance decisions</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -276,11 +217,11 @@
       <h2>⚙️ Portal Settings</h2>
       <div class="form-group">
         <label>Organization Name</label>
-        <input type="text" id="settingsOrg" placeholder="My Company IT Portal">
+        <input type="text" id="settingsOrg" placeholder="Cloud Service Management">
       </div>
       <div class="form-group">
         <label>GitHub Repository <span class="required">*</span></label>
-        <input type="text" id="settingsRepo" placeholder="owner/repo">
+        <input type="text" id="settingsRepo" placeholder="owner/cloud-ops-backlog">
       </div>
       <div class="form-group">
         <label>GitHub Token <span class="required">*</span></label>
@@ -293,9 +234,8 @@
       <div class="form-group">
         <label>Role <span class="required">*</span></label>
         <select id="settingsRole">
-          <option value="user">👤 General User</option>
-          <option value="approver">✅ Approver</option>
-          <option value="admin">🛡️ Admin</option>
+          <option value="user">👤 User</option>
+          <option value="admin">🛡️ Cloud Ops</option>
         </select>
       </div>
       <div class="form-actions">
@@ -308,7 +248,7 @@
   <div class="toast-container"></div>
   <script src="js/github-api.js"></script>
   <script>
-    document.querySelector('.logo-text').textContent = ITSM.config.orgName;
+    document.querySelector('.logo-text').textContent = CloudOps.config.orgName;
     applyRoleUI();
     function loadPageData() {}
   </script>

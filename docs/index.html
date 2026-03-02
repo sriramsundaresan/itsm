@@ -3,23 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IT Service Portal</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://api.github.com; img-src 'self' data:; font-src 'self';">
+  <title>Cloud Service Management</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Top Navigation -->
   <nav class="top-nav">
     <div class="logo">
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-      <span class="logo-text">IT Service Portal</span>
+      <span class="logo-text">Cloud Service Management</span>
     </div>
     <ul class="nav-links">
       <li><a href="index.html" class="active">Dashboard</a></li>
-      <li><a href="tickets.html">Tickets</a></li>
-      <li data-role="user,approver,admin"><a href="new-ticket.html">New Ticket</a></li>
-      <li data-role="approver,admin"><a href="approvals.html">Approvals</a></li>
-      <li data-role="user,approver,admin"><a href="catalog.html">Service Catalog</a></li>
+      <li><a href="tickets.html">Requests</a></li>
+      <li><a href="new-ticket.html">New Request</a></li>
+      <li><a href="catalog.html">Service Catalog</a></li>
     </ul>
     <div class="nav-right">
       <span id="roleBadge" class="role-badge"></span>
@@ -29,44 +28,56 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
   <div class="main-content">
 
-    <!-- Setup Banner (shown if not configured) -->
+    <!-- Setup Banner -->
     <div class="setup-banner" id="setupBanner" style="display:none;">
       <div>
         <h3>⚙️ Setup Required</h3>
-        <p>Connect your GitHub repository to start using the ITSM portal.</p>
+        <p>Connect your GitHub repository to start using the Cloud Service Management portal.</p>
       </div>
       <button class="btn btn-secondary" onclick="showSettings()">Configure Now</button>
     </div>
 
     <div class="page-header">
       <h1>Dashboard</h1>
-      <p>Service management overview</p>
+      <p>SDLC Cloud Service Management — Execution layer for approved workloads</p>
+    </div>
+
+    <!-- Guardrail Banner -->
+    <div class="setup-banner" style="display:flex;background:#fff3cd;border:1px solid #ffc107;color:#664d03;margin-bottom:20px;">
+      <div>
+        <h3>⚠️ Cloud Frontdoor Guardrail</h3>
+        <p>This portal operationalizes execution for workloads with a positive Cloud Frontdoor outcome. Non-production only (Sandbox / Dev / UAT).</p>
+      </div>
     </div>
 
     <!-- Quick Actions -->
     <div class="quick-actions">
-      <a href="new-ticket.html?type=incident" class="action-card">
-        <div class="action-icon">🚨</div>
-        <h3>Report Incident</h3>
-        <p>Report a service outage or disruption</p>
+      <a href="new-ticket.html?type=environment" class="action-card">
+        <div class="action-icon">🏗️</div>
+        <h3>Environment</h3>
+        <p>Provision Sandbox / Dev / UAT environments</p>
       </a>
-      <a href="new-ticket.html?type=change" class="action-card">
-        <div class="action-icon">🔄</div>
-        <h3>Change Request</h3>
-        <p>Request infrastructure or app changes</p>
+      <a href="new-ticket.html?type=iam" class="action-card">
+        <div class="action-icon">🔑</div>
+        <h3>Identity & Access</h3>
+        <p>Managed Identity or Service Principal</p>
       </a>
-      <a href="new-ticket.html?type=service" class="action-card">
-        <div class="action-icon">📋</div>
-        <h3>Service Request</h3>
-        <p>Request new services or access</p>
+      <a href="new-ticket.html?type=network" class="action-card">
+        <div class="action-icon">🌐</div>
+        <h3>Network</h3>
+        <p>Private endpoints, firewall rules, API exposure</p>
       </a>
-      <a href="tickets.html" class="action-card">
-        <div class="action-icon">🔍</div>
-        <h3>Track Tickets</h3>
-        <p>View and manage your tickets</p>
+      <a href="new-ticket.html?type=platform" class="action-card">
+        <div class="action-icon">⚙️</div>
+        <h3>Platform Services</h3>
+        <p>Database, Storage, Queue, Cache, AI/ML</p>
+      </a>
+      <a href="new-ticket.html?type=security-exception" class="action-card">
+        <div class="action-icon">🛡️</div>
+        <h3>Security Exception</h3>
+        <p>Temporary policy deviation (time-bound)</p>
       </a>
     </div>
 
@@ -76,50 +87,50 @@
         <div class="stat-icon blue">📊</div>
         <div class="stat-info">
           <div class="stat-number" id="statOpen">-</div>
-          <div class="stat-label">Open Tickets</div>
+          <div class="stat-label">Open Requests</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon red">🚨</div>
+        <div class="stat-icon green">🏗️</div>
         <div class="stat-info">
-          <div class="stat-number" id="statIncidents">-</div>
-          <div class="stat-label">Active Incidents</div>
+          <div class="stat-number" id="statEnv">-</div>
+          <div class="stat-label">Environments</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon orange">⚠️</div>
+        <div class="stat-icon" style="background:#e3f2fd;">🔑</div>
         <div class="stat-info">
-          <div class="stat-number" id="statCritical">-</div>
-          <div class="stat-label">Critical / High</div>
+          <div class="stat-number" id="statIAM">-</div>
+          <div class="stat-label">IAM Requests</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon purple">🔄</div>
+        <div class="stat-icon" style="background:#e8eaf6;">🌐</div>
         <div class="stat-info">
-          <div class="stat-number" id="statChanges">-</div>
-          <div class="stat-label">Pending Changes</div>
+          <div class="stat-number" id="statNet">-</div>
+          <div class="stat-label">Network</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">✅</div>
+        <div class="stat-icon purple">⚙️</div>
         <div class="stat-info">
-          <div class="stat-number" id="statClosed">-</div>
-          <div class="stat-label">Resolved</div>
+          <div class="stat-number" id="statPlat">-</div>
+          <div class="stat-label">Platform</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon yellow">⏱️</div>
+        <div class="stat-icon red">🛡️</div>
         <div class="stat-info">
-          <div class="stat-number" id="statSLA">-</div>
-          <div class="stat-label">SLA At Risk</div>
+          <div class="stat-number" id="statSecEx">-</div>
+          <div class="stat-label">Security Exceptions</div>
         </div>
       </div>
     </div>
 
-    <!-- Recent Tickets -->
+    <!-- Recent Requests -->
     <div class="card">
       <div class="card-header">
-        <h2>Recent Tickets</h2>
+        <h2>Recent Requests</h2>
         <a href="tickets.html" class="btn btn-sm btn-secondary">View All</a>
       </div>
       <div class="table-container">
@@ -129,12 +140,12 @@
               <th>ID</th>
               <th>Title</th>
               <th>Type</th>
-              <th>Priority</th>
+              <th>Environment</th>
               <th>Status</th>
               <th>Created</th>
             </tr>
           </thead>
-          <tbody id="recentTickets">
+          <tbody id="recentRequests">
             <tr><td colspan="6" class="loading"><div class="spinner"></div>Loading...</td></tr>
           </tbody>
         </table>
@@ -149,13 +160,13 @@
       <h2>⚙️ Portal Settings</h2>
       <div class="form-group">
         <label>Organization Name</label>
-        <input type="text" id="settingsOrg" placeholder="My Company IT Portal">
+        <input type="text" id="settingsOrg" placeholder="Cloud Service Management">
         <div class="help-text">Displayed in the header</div>
       </div>
       <div class="form-group">
         <label>GitHub Repository <span class="required">*</span></label>
-        <input type="text" id="settingsRepo" placeholder="owner/repo">
-        <div class="help-text">e.g. sriramsundaresan/itsm</div>
+        <input type="text" id="settingsRepo" placeholder="owner/cloud-ops-backlog">
+        <div class="help-text">e.g. myorg/cloud-ops-backlog</div>
       </div>
       <div class="form-group">
         <label>GitHub Token <span class="required">*</span></label>
@@ -165,14 +176,13 @@
       <div class="form-group">
         <label>GitHub Username <span class="required">*</span></label>
         <input type="text" id="settingsUsername" placeholder="your-github-username">
-        <div class="help-text">Your GitHub login (used for filtering tickets)</div>
+        <div class="help-text">Your GitHub login (used for filtering requests)</div>
       </div>
       <div class="form-group">
         <label>Role <span class="required">*</span></label>
         <select id="settingsRole">
-          <option value="user">👤 General User — Submit &amp; track your own tickets</option>
-          <option value="approver">✅ Approver — Review &amp; approve assigned requests</option>
-          <option value="admin">🛡️ Admin — Full access to all tickets &amp; settings</option>
+          <option value="user">👤 User — Submit &amp; track your own requests</option>
+          <option value="admin">🛡️ Cloud Ops — Full backlog access &amp; triage</option>
         </select>
         <div class="help-text">Controls what you see in the portal</div>
       </div>
@@ -187,50 +197,50 @@
 
   <script src="js/github-api.js"></script>
   <script>
-    // Set org name
-    document.querySelector('.logo-text').textContent = ITSM.config.orgName;
+    document.querySelector('.logo-text').textContent = CloudOps.config.orgName;
     applyRoleUI();
 
     async function loadPageData() {
       if (!checkConfig()) {
         document.getElementById('setupBanner').style.display = 'flex';
-        document.getElementById('recentTickets').innerHTML =
-          '<tr><td colspan="6" class="empty-state">Configure settings to view tickets</td></tr>';
+        document.getElementById('recentRequests').innerHTML =
+          '<tr><td colspan="6" class="empty-state">Configure settings to view requests</td></tr>';
         return;
       }
       document.getElementById('setupBanner').style.display = 'none';
 
       try {
-        const stats = await ITSM.getMyStats();
+        const stats = await CloudOps.getStats();
         document.getElementById('statOpen').textContent = stats.open;
-        document.getElementById('statIncidents').textContent = stats.incidents;
-        document.getElementById('statCritical').textContent = stats.critical + stats.high;
-        document.getElementById('statChanges').textContent = stats.changes;
-        document.getElementById('statClosed').textContent = stats.closed;
-        document.getElementById('statSLA').textContent = stats.slaWarning + stats.slaBreached;
+        document.getElementById('statEnv').textContent = stats.environment;
+        document.getElementById('statIAM').textContent = stats.iam;
+        document.getElementById('statNet').textContent = stats.network;
+        document.getElementById('statPlat').textContent = stats.platform;
+        document.getElementById('statSecEx').textContent = stats.securityException;
 
-        // Recent tickets table
-        const tbody = document.getElementById('recentTickets');
-        if (stats.recentTickets.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="empty-icon">📭</div><h3>No open tickets</h3></td></tr>';
+        const tbody = document.getElementById('recentRequests');
+        if (stats.recentRequests.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="empty-icon">📭</div><h3>No open requests</h3></td></tr>';
           return;
         }
-        tbody.innerHTML = stats.recentTickets.map(t => {
-          const type = ITSM.getTicketType(t);
-          const priority = ITSM.getPriority(t);
-          const sla = ITSM.getSLAStatus(t);
-          return `<tr onclick="window.location='ticket.html?id=${t.number}'" style="cursor:pointer">
-            <td><strong>#${t.number}</strong></td>
-            <td>${t.title}${sla === 'breached' ? ' <span class="badge badge-breached">SLA Breached</span>' : sla === 'warning' ? ' <span class="badge badge-warning">SLA Warning</span>' : ''}</td>
-            <td><span class="badge badge-${type}">${type}</span></td>
-            <td><span class="badge badge-${priority}">${priority}</span></td>
-            <td><span class="badge badge-open">Open</span></td>
-            <td>${ITSM.timeAgo(t.created_at)}</td>
+        tbody.innerHTML = stats.recentRequests.map(t => {
+          const typeDef = CloudOps.getRequestTypeDef(t);
+          const env = CloudOps.getEnvironment(t);
+          const isOpen = t.state === 'open';
+          const safeTitle = CloudOps.escapeHtml(t.title);
+          const safeNumber = parseInt(t.number, 10);
+          return `<tr onclick="window.location='ticket.html?id=${safeNumber}'" style="cursor:pointer">
+            <td><strong>#${safeNumber}</strong></td>
+            <td>${safeTitle}</td>
+            <td><span class="badge badge-${CloudOps.escapeHtml(typeDef.badge)}">${CloudOps.escapeHtml(typeDef.icon)} ${CloudOps.escapeHtml(typeDef.name)}</span></td>
+            <td>${env !== 'none' ? `<span class="badge badge-${CloudOps.escapeHtml(env)}">${CloudOps.escapeHtml(env)}</span>` : '—'}</td>
+            <td><span class="badge badge-${isOpen ? 'open' : 'closed'}">${isOpen ? 'Open' : 'Closed'}</span></td>
+            <td>${CloudOps.escapeHtml(CloudOps.timeAgo(t.created_at))}</td>
           </tr>`;
         }).join('');
       } catch (err) {
         showToast('Failed to load dashboard: ' + err.message, 'error');
-        document.getElementById('recentTickets').innerHTML =
+        document.getElementById('recentRequests').innerHTML =
           `<tr><td colspan="6" class="empty-state">Error loading data. Check your settings.</td></tr>`;
       }
     }

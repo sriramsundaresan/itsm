@@ -1,5 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: "\U0001F4D6 Knowledge Base"
-    url: https://github.com/YOUR_ORG/itsm-service-management/blob/main/docs/service_catalog.md
-    about: Browse the service catalog and self-help runbooks before raising a ticket.

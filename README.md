@@ -1,28 +1,34 @@
-# ITSM Service Management on GitHub
+# SDLC Cloud Service Management
 
-> Cloud Service Management implementation using GitHub Issues, Projects, and Actions.
-> Based on [Microsoft Cloud Service Management Best Practices](docs/runbooks/).
+> Lightweight, automation-first execution layer for managing **approved cloud workloads** during SDLC phases (Sandbox, Dev, UAT).
+>
+> Uses GitHub Issues as a single operational backlog. Built on the [Service Management Specification](AdditionInformation.MD).
+
+**⚠️ Cloud Frontdoor Guardrail:** This portal is only applicable **after** a workload has received a positive Cloud Frontdoor outcome. It does not replace or bypass Cloud Frontdoor.
+
+---
 
 ## Quick Start
 
-### 1. Create the GitHub Repository
+### 1. Create the Repository
 
 ```bash
-gh repo create YOUR_ORG/itsm-service-management --public --description "ITSM Service Management"
+gh repo create YOUR_ORG/cloud-ops-backlog --private --description "SDLC Cloud Service Management"
 ```
 
 ### 2. Push This Code
 
 ```bash
-cd "RL - Agent"
 git init
-git remote add origin https://github.com/YOUR_ORG/itsm-service-management.git
+git remote add origin https://github.com/YOUR_ORG/cloud-ops-backlog.git
 git add .
-git commit -m "Initial ITSM setup"
+git commit -m "Initial Cloud Service Management setup"
 git push -u origin main
 ```
 
 ### 3. Setup Labels
+
+Creates the 13 standardized labels defined in the spec:
 
 ```powershell
 # Windows
@@ -32,91 +38,65 @@ git push -u origin main
 bash scripts/setup_labels.sh
 ```
 
-### 4. Create the GitHub Project Board
+### 4. Enable GitHub Pages
 
-1. Go to **GitHub repo → Projects → New Project**
-2. Choose **Board** view
-3. Add columns: `🆕 New` → `🔍 Triaged` → `🔧 In Progress` → `✅ Resolved`
-4. Set auto-filters:
-   - **New**: `is:issue is:open -label:triaged -label:in-progress`
-   - **Triaged**: `is:issue is:open label:triaged -label:in-progress`
-   - **In Progress**: `is:issue is:open label:in-progress`
-   - **Resolved**: `is:issue is:closed`
+1. Go to **Settings → Pages**
+2. Set source to **Deploy from a branch**
+3. Select branch `main`, folder `/docs`
+4. Portal is live at `https://YOUR_ORG.github.io/cloud-ops-backlog/`
 
-### 5. Configure Teams (CODEOWNERS)
+### 5. Configure the Portal
 
-Create `.github/CODEOWNERS` to auto-assign reviewers for change requests:
-
-```
-# Change requests need architect approval
-.github/ISSUE_TEMPLATE/change_request.yml @change-approvers @senior-architects
-```
-
-### 6. Done! Create Your First Ticket
-
-Go to **Issues → New Issue** and choose a template:
-- 🔴 **Report an Incident** — service disruption
-- 🔄 **Request a Change** — infrastructure/config change
-- 📋 **Request a Service** — new resource or access
+1. Open the portal URL
+2. Click the ⚙️ Settings gear
+3. Enter your repository (`YOUR_ORG/cloud-ops-backlog`), GitHub token, and username
+4. Select your role: **User** or **Cloud Ops (Admin)**
 
 ---
 
-## How It Works
+## Request Types
 
-### Incident Flow
+| Type | Prefix | Description |
+|---|---|---|
+| 🏗️ Environment Provisioning | `ENV` | SDLC environment execution (Sandbox / Dev / UAT) |
+| 🔑 Identity & Access | `IAM` | Non-human identity enablement (Managed Identity / Service Principal) |
+| 🌐 Network & Connectivity | `NET` | Private endpoints, firewall rules, API exposure |
+| ⚙️ Platform Services | `PLAT` | Database, Storage, Queue, Cache, AI/ML provisioning |
+| 🛡️ Security Exception | `SEC-EX` | Temporary policy deviation (time-bound, no permanent exceptions) |
 
-```
-User creates incident issue
-        ↓
-GitHub Actions auto-triages:
-  • Parses severity from form
-  • Applies priority label (critical/high/medium/low)
-  • Assigns to team based on affected service
-  • Posts SLA timer
-        ↓
-SLA Monitor (runs every hour):
-  • Checks all open incidents
-  • Adds ⚠️ sla-warning at 75% time
-  • Adds 🚨 sla-breached if overdue
-  • Escalates to incident managers
-        ↓
-Team resolves → closes issue
-```
+---
 
-### Change Management Flow
+## Label Taxonomy (13 Labels)
 
-```
-User creates change request issue
-        ↓
-GitHub Actions auto-classifies:
-  • Standard → auto-approved ✅
-  • Normal → routes to @change-approvers
-  • Emergency → routes to @emergency-approvers
-        ↓
-Checks pre-change checklist:
-  • Rollback plan present?
-  • Testing done?
-  • All boxes checked?
-        ↓
-Reviewers approve/reject via labels
-        ↓
-Implement → verify → close
-```
+| Category | Labels |
+|---|---|
+| **Request Type** | `environment`, `iam`, `network`, `platform`, `security-exception` |
+| **Environment** | `sandbox`, `dev`, `uat` |
+| **Data Classification** | `public`, `confidential`, `restricted` |
+| **Cost** | `high-cost` |
+| **Lifecycle** | `decommission` |
 
-### Service Request Flow
+Labels are applied automatically when a request is submitted.
+
+---
+
+## Operational Flow
 
 ```
-User creates service request issue
+User submits request via portal form
         ↓
-GitHub Actions auto-routes:
-  • Parses category (compute, database, networking, etc.)
-  • Assigns to correct team
-  • Generates ticket ID (SR-###)
-  • Sets estimated completion date
+Portal creates GitHub Issue:
+  • Auto-generates title (ENV|App|Region, IAM|App, etc.)
+  • Builds structured Markdown body
+  • Applies type + environment + classification labels
         ↓
-Manager approval (if critical/security)
+Cloud Ops triages backlog
         ↓
-Team fulfills → closes issue
+IaC PR raised → pipelines enforce governance
+        ↓
+Deployment executed
+        ↓
+Full audit trail via Issue + PR history
 ```
 
 ---
@@ -124,86 +104,65 @@ Team fulfills → closes issue
 ## File Structure
 
 ```
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── config.yml              ← Template chooser config
-│   │   ├── incident.yml            ← 🔴 Incident report form
-│   │   ├── change_request.yml      ← 🔄 Change request form
-│   │   └── service_request.yml     ← 📋 Service request form
-│   │
-│   └── workflows/
-│       ├── incident_triage.yml     ← Auto-triage incidents
-│       ├── change_approval.yml     ← Change approval workflow
-│       ├── service_fulfillment.yml ← Service request routing
-│       └── sla_monitor.yml         ← Hourly SLA breach check
-│
-├── docs/
-│   ├── service_catalog.md          ← Available services list
-│   └── runbooks/
-│       ├── incident_management.md  ← Incident handling procedures
-│       └── change_management.md    ← Change process & rollback
+├── docs/                           ← GitHub Pages portal
+│   ├── index.html                  ← Dashboard with stats & quick actions
+│   ├── new-ticket.html             ← 5 request type forms
+│   ├── tickets.html                ← Request list with filters
+│   ├── ticket.html                 ← Request detail view
+│   ├── catalog.html                ← Service catalog
+│   ├── css/
+│   │   └── style.css               ← Portal theme
+│   └── js/
+│       └── github-api.js           ← API layer & utilities
 │
 ├── scripts/
-│   ├── setup_labels.sh             ← Label setup (Linux/Mac)
-│   └── setup_labels.ps1            ← Label setup (Windows)
+│   ├── setup_labels.ps1            ← Label setup (Windows)
+│   └── setup_labels.sh             ← Label setup (Linux/Mac)
 │
+├── AdditionInformation.MD          ← Service Management Specification
 └── README.md                       ← This file
 ```
 
-## ITSM Processes Covered
+## Scope
 
-Based on [Microsoft Cloud Service Management Best Practices](Cloud%20Service%20Management/):
+### In Scope
 
-| ITSM Process | Implementation | Status |
-|---|---|---|
-| **Service Desk** | Issue templates + auto-triage | ✅ Implemented |
-| **Incident Management** | Incident form + SLA tracking | ✅ Implemented |
-| **Change Management** | Change request + approval workflow | ✅ Implemented |
-| **Service Request Fulfillment** | Service catalog + auto-routing | ✅ Implemented |
-| **SLA Management** | Hourly SLA monitor + escalation | ✅ Implemented |
-| **Knowledge Management** | Runbooks in docs/ folder | ✅ Implemented |
-| **Asset & Configuration Mgmt** | Future: integrate with Azure Resource Graph | 🔜 Planned |
-| **Financial Management (FinOps)** | Future: cost center tracking + Azure Cost Mgmt | 🔜 Planned |
-| **Continuity Management** | Future: DR runbooks + Azure Site Recovery | 🔜 Planned |
-| **Policy & Compliance** | Future: Azure Policy integration | 🔜 Planned |
+- SDLC cloud execution requests (Sandbox, Dev, UAT)
+- Non-human IAM at workload level
+- Network connectivity enablement
+- Standard platform services provisioning
+- Time-bound security exceptions (execution only)
 
-## Key Principles Applied
+### Explicitly Out of Scope
 
-From the Microsoft Cloud Service Management document:
+- Cloud suitability decisions (Cloud Frontdoor)
+- Production environment provisioning
+- User IAM and break-glass access
+- Incident and change management
+- Regulatory risk acceptance decisions
 
-1. **"Manual efforts are bugs"** → GitHub Actions automates triage, routing, SLA tracking
-2. **"Self-service and automation"** → Users self-serve via issue templates (structured forms)
-3. **"Service monitoring over fault monitoring"** → SLA monitor tracks end-to-end service health
-4. **"Manage end-to-end services"** → Service catalog defines all available services
+---
 
-## Customization
+## Roles
 
-### Add a New Service to the Catalog
+| Role | Access |
+|---|---|
+| **👤 User** | Submit requests, track own requests, add comments |
+| **🛡️ Cloud Ops (Admin)** | Full backlog access, close requests, mark for decommission, triage |
 
-1. Edit [docs/service_catalog.md](docs/service_catalog.md)
-2. Add the service to the dropdown in [.github/ISSUE_TEMPLATE/service_request.yml](.github/ISSUE_TEMPLATE/service_request.yml)
+---
 
-### Add a New Team
+## Design Principles
 
-1. Create a GitHub Team in your org
-2. Update the routing logic in [.github/workflows/service_fulfillment.yml](.github/workflows/service_fulfillment.yml)
-3. Update the routing logic in [.github/workflows/incident_triage.yml](.github/workflows/incident_triage.yml)
-
-### Change SLA Targets
-
-Edit the `slaMap` object in [.github/workflows/sla_monitor.yml](.github/workflows/sla_monitor.yml):
-
-```javascript
-const slaMap = {
-  'priority-critical': 1,    // hours
-  'priority-high': 4,
-  'priority-medium': 8,
-  'priority-low': 48
-};
-```
+1. **Cloud Frontdoor remains authoritative** for onboarding decisions
+2. **Execution, not assessment** — no suitability or risk questionnaires
+3. **No approval workflows** in the intake layer
+4. **Automation first** — governance enforced via pipelines, not humans
+5. **Single operational backlog** (GitHub Issues)
+6. **Audit by design** — full traceability via Issues, PRs, and pipeline logs
 
 ---
 
 ## License
 
-Internal use only. Based on Microsoft Cloud Service Management Best Practice Recommendations.
+Internal use only.

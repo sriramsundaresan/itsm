@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tickets - IT Service Portal</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://api.github.com; img-src 'self' data:; font-src 'self';">
+  <title>Requests - Cloud Service Management</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,14 +12,13 @@
   <nav class="top-nav">
     <div class="logo">
       <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-      <span class="logo-text">IT Service Portal</span>
+      <span class="logo-text">Cloud Service Management</span>
     </div>
     <ul class="nav-links">
       <li><a href="index.html">Dashboard</a></li>
-      <li><a href="tickets.html" class="active">Tickets</a></li>
-      <li data-role="user,approver,admin"><a href="new-ticket.html">New Ticket</a></li>
-      <li data-role="approver,admin"><a href="approvals.html">Approvals</a></li>
-      <li data-role="user,approver,admin"><a href="catalog.html">Service Catalog</a></li>
+      <li><a href="tickets.html" class="active">Requests</a></li>
+      <li><a href="new-ticket.html">New Request</a></li>
+      <li><a href="catalog.html">Service Catalog</a></li>
     </ul>
     <div class="nav-right">
       <span id="roleBadge" class="role-badge"></span>
@@ -30,8 +30,8 @@
 
   <div class="main-content">
     <div class="page-header">
-      <h1>All Tickets</h1>
-      <p>View and manage IT service tickets</p>
+      <h1>All Requests</h1>
+      <p>View and manage cloud service requests</p>
     </div>
 
     <!-- Filters -->
@@ -44,23 +44,24 @@
         </select>
         <select id="filterType" onchange="loadPageData()">
           <option value="">All Types</option>
-          <option value="incident">Incidents</option>
-          <option value="change-request">Change Requests</option>
-          <option value="service-request">Service Requests</option>
+          <option value="environment">🏗️ Environment</option>
+          <option value="iam">🔑 Identity & Access</option>
+          <option value="network">🌐 Network</option>
+          <option value="platform">⚙️ Platform</option>
+          <option value="security-exception">🛡️ Security Exception</option>
         </select>
-        <select id="filterPriority" onchange="loadPageData()">
-          <option value="">All Priorities</option>
-          <option value="priority-critical">Critical</option>
-          <option value="priority-high">High</option>
-          <option value="priority-medium">Medium</option>
-          <option value="priority-low">Low</option>
+        <select id="filterEnv" onchange="loadPageData()">
+          <option value="">All Environments</option>
+          <option value="sandbox">Sandbox</option>
+          <option value="dev">Dev</option>
+          <option value="uat">UAT</option>
         </select>
-        <input type="text" class="search-input" id="filterSearch" placeholder="🔍 Search tickets..." oninput="filterTable()">
-        <a href="new-ticket.html" class="btn btn-primary btn-sm">+ New Ticket</a>
+        <input type="text" class="search-input" id="filterSearch" placeholder="🔍 Search requests..." oninput="filterTable()">
+        <a href="new-ticket.html" class="btn btn-primary btn-sm">+ New Request</a>
       </div>
     </div>
 
-    <!-- Tickets Table -->
+    <!-- Requests Table -->
     <div class="card">
       <div class="table-container">
         <table>
@@ -69,15 +70,15 @@
               <th>ID</th>
               <th>Title</th>
               <th>Type</th>
-              <th>Priority</th>
-              <th>SLA</th>
+              <th>Environment</th>
+              <th>Classification</th>
               <th>Status</th>
               <th>Created</th>
               <th>Updated</th>
             </tr>
           </thead>
-          <tbody id="ticketsBody">
-            <tr><td colspan="8" class="loading"><div class="spinner"></div>Loading tickets...</td></tr>
+          <tbody id="requestsBody">
+            <tr><td colspan="8" class="loading"><div class="spinner"></div>Loading requests...</td></tr>
           </tbody>
         </table>
       </div>
@@ -90,11 +91,11 @@
       <h2>⚙️ Portal Settings</h2>
       <div class="form-group">
         <label>Organization Name</label>
-        <input type="text" id="settingsOrg" placeholder="My Company IT Portal">
+        <input type="text" id="settingsOrg" placeholder="Cloud Service Management">
       </div>
       <div class="form-group">
         <label>GitHub Repository <span class="required">*</span></label>
-        <input type="text" id="settingsRepo" placeholder="owner/repo">
+        <input type="text" id="settingsRepo" placeholder="owner/cloud-ops-backlog">
       </div>
       <div class="form-group">
         <label>GitHub Token <span class="required">*</span></label>
@@ -107,9 +108,8 @@
       <div class="form-group">
         <label>Role <span class="required">*</span></label>
         <select id="settingsRole">
-          <option value="user">👤 General User</option>
-          <option value="approver">✅ Approver</option>
-          <option value="admin">🛡️ Admin</option>
+          <option value="user">👤 User</option>
+          <option value="admin">🛡️ Cloud Ops</option>
         </select>
       </div>
       <div class="form-actions">
@@ -123,95 +123,84 @@
 
   <script src="js/github-api.js"></script>
   <script>
-    document.querySelector('.logo-text').textContent = ITSM.config.orgName;
+    document.querySelector('.logo-text').textContent = CloudOps.config.orgName;
     applyRoleUI();
-    let allTickets = [];
+    let allRequests = [];
 
     async function loadPageData() {
       if (!checkConfig()) return;
 
-      const tbody = document.getElementById('ticketsBody');
+      const tbody = document.getElementById('requestsBody');
       tbody.innerHTML = '<tr><td colspan="8" class="loading"><div class="spinner"></div>Loading...</td></tr>';
 
       const state = document.getElementById('filterState').value;
       const typeFilter = document.getElementById('filterType').value;
-      const priorityFilter = document.getElementById('filterPriority').value;
+      const envFilter = document.getElementById('filterEnv').value;
 
-      // Update page header based on role
       const headerEl = document.querySelector('.page-header h1');
       const descEl = document.querySelector('.page-header p');
-      if (ITSM.config.isUser) {
-        headerEl.textContent = 'My Tickets';
-        descEl.textContent = 'View tickets you have submitted';
-      } else if (ITSM.config.isApprover) {
-        headerEl.textContent = 'My Tickets & Assignments';
-        descEl.textContent = 'View your submitted tickets and assigned approvals';
+      if (CloudOps.config.isUser) {
+        headerEl.textContent = 'My Requests';
+        descEl.textContent = 'View requests you have submitted';
       } else {
-        headerEl.textContent = 'All Tickets';
-        descEl.textContent = 'View and manage all IT service tickets';
+        headerEl.textContent = 'All Requests';
+        descEl.textContent = 'View and manage all cloud service requests';
       }
 
       try {
-        const labels = [typeFilter, priorityFilter].filter(Boolean).join(',');
-        
-        let tickets;
+        const labels = [typeFilter, envFilter].filter(Boolean).join(',');
+
+        let requests;
         if (state === 'all') {
           const [open, closed] = await Promise.all([
-            ITSM.getMyTickets({ state: 'open', labels }),
-            ITSM.getMyTickets({ state: 'closed', labels })
+            CloudOps.getMyRequests({ state: 'open', labels }),
+            CloudOps.getMyRequests({ state: 'closed', labels })
           ]);
-          tickets = [...open, ...closed].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          requests = [...open, ...closed].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         } else {
-          tickets = await ITSM.getMyTickets({ state, labels });
+          requests = await CloudOps.getMyRequests({ state, labels });
         }
 
-        // Approvers: show own submitted tickets + assigned tickets
-        if (ITSM.config.isApprover && ITSM.config.username) {
-          const u = ITSM.config.username.toLowerCase();
-          tickets = tickets.filter(t =>
-            (t.user && t.user.login.toLowerCase() === u) ||
-            (t.assignee && t.assignee.login.toLowerCase() === u)
-          );
-        }
-
-        allTickets = tickets;
-        renderTable(tickets);
+        allRequests = requests;
+        renderTable(requests);
       } catch (err) {
-        showToast('Error loading tickets: ' + err.message, 'error');
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading tickets</td></tr>';
+        showToast('Error loading requests: ' + err.message, 'error');
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading requests</td></tr>';
       }
     }
 
-    function renderTable(tickets) {
-      const tbody = document.getElementById('ticketsBody');
-      if (tickets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">📭</div><h3>No tickets found</h3></td></tr>';
+    function renderTable(requests) {
+      const tbody = document.getElementById('requestsBody');
+      if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-icon">📭</div><h3>No requests found</h3></td></tr>';
         return;
       }
 
-      tbody.innerHTML = tickets.map(t => {
-        const type = ITSM.getTicketType(t);
-        const priority = ITSM.getPriority(t);
-        const sla = ITSM.getSLAStatus(t);
+      tbody.innerHTML = requests.map(t => {
+        const typeDef = CloudOps.getRequestTypeDef(t);
+        const env = CloudOps.getEnvironment(t);
+        const dataClass = CloudOps.getDataClassification(t);
         const isOpen = t.state === 'open';
+        const safeTitle = CloudOps.escapeHtml(t.title);
+        const safeNumber = parseInt(t.number, 10);
 
-        return `<tr onclick="window.location='ticket.html?id=${t.number}'" style="cursor:pointer">
-          <td><strong>#${t.number}</strong></td>
-          <td>${t.title}</td>
-          <td><span class="badge badge-${type}">${type}</span></td>
-          <td><span class="badge badge-${priority}">${priority || 'none'}</span></td>
-          <td>${sla === 'breached' ? '<span class="badge badge-breached">Breached</span>' : sla === 'warning' ? '<span class="badge badge-warning">Warning</span>' : '<span class="badge badge-low">OK</span>'}</td>
+        return `<tr onclick="window.location='ticket.html?id=${safeNumber}'" style="cursor:pointer">
+          <td><strong>#${safeNumber}</strong></td>
+          <td>${safeTitle}</td>
+          <td><span class="badge badge-${CloudOps.escapeHtml(typeDef.badge)}">${CloudOps.escapeHtml(typeDef.icon)} ${CloudOps.escapeHtml(typeDef.name)}</span></td>
+          <td>${env !== 'none' ? `<span class="badge badge-${CloudOps.escapeHtml(env)}">${CloudOps.escapeHtml(env)}</span>` : '—'}</td>
+          <td>${dataClass !== 'none' ? `<span class="badge badge-${CloudOps.escapeHtml(dataClass)}">${CloudOps.escapeHtml(dataClass)}</span>` : '—'}</td>
           <td><span class="badge badge-${isOpen ? 'open' : 'closed'}">${isOpen ? 'Open' : 'Closed'}</span></td>
-          <td>${ITSM.timeAgo(t.created_at)}</td>
-          <td>${ITSM.timeAgo(t.updated_at)}</td>
+          <td>${CloudOps.escapeHtml(CloudOps.timeAgo(t.created_at))}</td>
+          <td>${CloudOps.escapeHtml(CloudOps.timeAgo(t.updated_at))}</td>
         </tr>`;
       }).join('');
     }
 
     function filterTable() {
       const search = document.getElementById('filterSearch').value.toLowerCase();
-      if (!search) { renderTable(allTickets); return; }
-      const filtered = allTickets.filter(t =>
+      if (!search) { renderTable(allRequests); return; }
+      const filtered = allRequests.filter(t =>
         t.title.toLowerCase().includes(search) ||
         ('#' + t.number).includes(search)
       );

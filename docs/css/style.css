@@ -1,5 +1,5 @@
 /* ============================================
-   ITSM Service Portal - Professional Theme
+   Cloud Service Management - Professional Theme
    ============================================ */
 
 :root {
@@ -402,6 +402,28 @@ table tr:hover { background: var(--gray-50); }
 .badge-warning { background: #fef9c3; color: #a16207; }
 .badge-breached { background: #fee2e2; color: var(--danger-dark); }
 
+/* Cloud Service Management - Request Type Badges */
+.badge-env { background: #dcfce7; color: #15803d; }
+.badge-iam { background: #dbeafe; color: #1e40af; }
+.badge-net { background: #e0e7ff; color: #3730a3; }
+.badge-plat { background: #f3e8ff; color: #6b21a8; }
+.badge-secex { background: #fee2e2; color: var(--danger-dark); }
+.badge-other { background: var(--gray-200); color: var(--gray-600); }
+
+/* Environment Badges */
+.badge-sandbox { background: #e0f2fe; color: #0369a1; }
+.badge-dev { background: #e0e7ff; color: #4338ca; }
+.badge-uat { background: #f3e8ff; color: #7e22ce; }
+
+/* Data Classification Badges */
+.badge-public { background: #dcfce7; color: #15803d; }
+.badge-confidential { background: #fef9c3; color: #a16207; }
+.badge-restricted { background: #fee2e2; color: var(--danger-dark); }
+
+/* Lifecycle Badges */
+.badge-decommission { background: #f3e8ff; color: #6b21a8; }
+.badge-high-cost { background: #ffedd5; color: #c2410c; }
+
 /* ---- Tabs ---- */
 .tabs {
   display: flex;
@@ -699,145 +721,8 @@ table tr:hover { background: var(--gray-50); }
 .sla-bar-fill.red { background: var(--danger); }
 
 /* ============================================
-   Approval Workflow Styles
+   Cloud Ops - Additional Styles
    ============================================ */
-
-.approval-status-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  border-radius: var(--radius);
-  margin-bottom: 16px;
-}
-
-.approval-status-banner.approval-pending {
-  background: #fff8e1;
-  border: 1px solid #ffcc02;
-}
-
-.approval-status-banner.approval-approved {
-  background: #e8f5e9;
-  border: 1px solid #4caf50;
-}
-
-.approval-status-banner.approval-rejected {
-  background: #ffebee;
-  border: 1px solid #f44336;
-}
-
-.approval-icon {
-  font-size: 24px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.approval-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.approval-btn-approve {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  background: #2e7d32;
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.approval-btn-approve:hover {
-  background: #1b5e20;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.approval-btn-reject {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 24px;
-  background: #c62828;
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.approval-btn-reject:hover {
-  background: #b71c1c;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Approval Queue Page */
-.approval-card {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 12px;
-  transition: box-shadow 0.2s;
-}
-
-.approval-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.approval-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-}
-
-.approval-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--gray-800);
-}
-
-.approval-card-title a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.approval-card-title a:hover {
-  color: var(--primary);
-}
-
-.approval-card-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--gray-500);
-  margin-top: 4px;
-}
-
-.approval-count-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--danger);
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  padding: 0 6px;
-  margin-left: 6px;
-}
 
 /* ============================================
    Role Badge
