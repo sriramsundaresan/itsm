@@ -49,6 +49,7 @@
       <button class="tab" onclick="showForm('network')">🌐 Network</button>
       <button class="tab" onclick="showForm('platform')">⚙️ Platform</button>
       <button class="tab" onclick="showForm('security-exception')">🛡️ Security Exception</button>
+      <button class="tab" onclick="showForm('subscription')">☁️ New Subscription</button>
     </div>
 
     <!-- ============ ENVIRONMENT PROVISIONING FORM ============ -->
@@ -380,6 +381,93 @@
         </div>
       </form>
     </div>
+
+    <!-- ============ NEW SUBSCRIPTION CREATION FORM ============ -->
+    <div class="card form-panel" id="form-subscription" style="display:none">
+      <h2>☁️ New Subscription Creation Request</h2>
+      <p style="color:var(--gray-500);font-size:14px;margin-bottom:20px;">Provision a new cloud subscription for an approved workload — Sandbox, Dev, or UAT only</p>
+      <form onsubmit="submitSubscription(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Subscription Name <span class="required">*</span></label>
+            <input type="text" id="sub-name" required placeholder="e.g. payments-api-dev" maxlength="256">
+          </div>
+          <div class="form-group">
+            <label>Cost Center <span class="required">*</span></label>
+            <input type="text" id="sub-costCenter" required placeholder="e.g. CC-1234" maxlength="100">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Business Owner <span class="required">*</span></label>
+            <input type="text" id="sub-bizOwner" required placeholder="name@company.com" maxlength="256">
+          </div>
+          <div class="form-group">
+            <label>Technical Owner <span class="required">*</span></label>
+            <input type="text" id="sub-techOwner" required placeholder="name@company.com" maxlength="256">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Subscription Purpose <span class="required">*</span></label>
+            <select id="sub-purpose" required>
+              <option value="">Select...</option>
+              <option value="Sandbox">Sandbox</option>
+              <option value="Dev">Dev</option>
+              <option value="UAT">UAT</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Region <span class="required">*</span></label>
+            <select id="sub-region" required>
+              <option value="">Select...</option>
+              <option value="Southeast Asia">Southeast Asia</option>
+              <option value="East Asia">East Asia</option>
+              <option value="Australia East">Australia East</option>
+              <option value="West Europe">West Europe</option>
+              <option value="East US">East US</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Management Group</label>
+            <input type="text" id="sub-mgmtGroup" placeholder="e.g. Non-Production" maxlength="256">
+          </div>
+          <div class="form-group">
+            <label>Budget Limit (monthly)</label>
+            <input type="text" id="sub-budget" placeholder="e.g. $1,000/mo" maxlength="100">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Data Classification <span class="required">*</span></label>
+          <select id="sub-dataClass" required>
+            <option value="">Select...</option>
+            <option value="public">Public</option>
+            <option value="confidential">Confidential</option>
+            <option value="restricted">Restricted</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Business Justification <span class="required">*</span></label>
+          <textarea id="sub-justification" required placeholder="Why is this subscription needed?" maxlength="5000" style="min-height:80px"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cloud Frontdoor Reference ID</label>
+            <input type="text" id="sub-cfdRef" placeholder="Optional - CFD reference" maxlength="256">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="sub-notes" placeholder="Additional details..." maxlength="5000" style="min-height:80px"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="sub-submit">☁️ Submit Subscription Request</button>
+          <button type="reset" class="btn btn-secondary">Clear</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Settings Modal -->
@@ -423,7 +511,7 @@
     document.querySelector('.logo-text').textContent = CloudOps.config.orgName;
     applyRoleUI();
 
-    const FORM_TYPES = ['environment', 'iam', 'network', 'platform', 'security-exception'];
+    const FORM_TYPES = ['environment', 'iam', 'network', 'platform', 'security-exception', 'subscription'];
 
     function showForm(type) {
       document.querySelectorAll('.form-panel').forEach(p => p.style.display = 'none');
@@ -578,6 +666,37 @@
       } catch (err) {
         showToast('Error: ' + err.message, 'error');
         btn.disabled = false; btn.textContent = '🛡️ Submit Security Exception';
+      }
+    }
+
+    async function submitSubscription(e) {
+      e.preventDefault();
+      if (!checkConfig()) return;
+      const btn = document.getElementById('sub-submit');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        const data = {
+          subscriptionName:      CloudOps.validateInput(document.getElementById('sub-name').value, 'Subscription Name', { maxLength: 256, required: true }),
+          businessOwner:         CloudOps.validateInput(document.getElementById('sub-bizOwner').value, 'Business Owner', { maxLength: 256, required: true }),
+          technicalOwner:        CloudOps.validateInput(document.getElementById('sub-techOwner').value, 'Technical Owner', { maxLength: 256, required: true }),
+          costCenter:            CloudOps.validateInput(document.getElementById('sub-costCenter').value, 'Cost Center', { maxLength: 100, required: true }),
+          subscriptionPurpose:   document.getElementById('sub-purpose').value,
+          region:                document.getElementById('sub-region').value,
+          managementGroup:       document.getElementById('sub-mgmtGroup').value,
+          budgetLimit:           document.getElementById('sub-budget').value,
+          dataClassification:    document.getElementById('sub-dataClass').value,
+          businessJustification: CloudOps.validateInput(document.getElementById('sub-justification').value, 'Business Justification', { maxLength: 5000, required: true }),
+          cfdReferenceId:        document.getElementById('sub-cfdRef').value,
+          notes:                 document.getElementById('sub-notes').value
+        };
+        const title = CloudOps.generateTitle('subscription', data);
+        const labels = ['subscription', data.subscriptionPurpose.toLowerCase(), data.dataClassification].filter(Boolean);
+        const issue = await CloudOps.createRequest(title, CloudOps.buildSubscriptionBody(data), labels);
+        showToast(`Subscription Request #${issue.number} created!`, 'success');
+        setTimeout(() => window.location = `ticket.html?id=${parseInt(issue.number, 10)}`, 1500);
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+        btn.disabled = false; btn.textContent = '☁️ Submit Subscription Request';
       }
     }
 

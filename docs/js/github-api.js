@@ -91,7 +91,8 @@ const CloudOps = {
     iam:                  { label: 'iam',                  prefix: 'IAM',    name: 'Identity & Access',        icon: '🔑', badge: 'iam' },
     network:              { label: 'network',              prefix: 'NET',    name: 'Network & Connectivity',   icon: '🌐', badge: 'net' },
     platform:             { label: 'platform',             prefix: 'PLAT',   name: 'Platform Services',        icon: '⚙️',  badge: 'plat' },
-    'security-exception': { label: 'security-exception',   prefix: 'SEC-EX', name: 'Security Exception',       icon: '🛡️', badge: 'secex' }
+    'security-exception': { label: 'security-exception',   prefix: 'SEC-EX', name: 'Security Exception',       icon: '🛡️', badge: 'secex' },
+    subscription:         { label: 'subscription',         prefix: 'SUB',    name: 'New Subscription',         icon: '☁️', badge: 'sub' }
   },
 
   // ---- API Helpers ----
@@ -211,6 +212,7 @@ const CloudOps = {
       network: openIssues.filter(i => hasLabel(i, 'network')).length,
       platform: openIssues.filter(i => hasLabel(i, 'platform')).length,
       securityException: openIssues.filter(i => hasLabel(i, 'security-exception')).length,
+      subscription: openIssues.filter(i => hasLabel(i, 'subscription')).length,
       sandbox: openIssues.filter(i => hasLabel(i, 'sandbox')).length,
       dev: openIssues.filter(i => hasLabel(i, 'dev')).length,
       uat: openIssues.filter(i => hasLabel(i, 'uat')).length,
@@ -272,6 +274,7 @@ const CloudOps = {
       case 'network':            return `NET | ${data.applicationName}`;
       case 'platform':           return `PLAT | ${data.applicationName}`;
       case 'security-exception': return `SEC-EX | ${data.applicationName}`;
+      case 'subscription':       return `SUB | ${data.subscriptionName} | ${data.subscriptionPurpose}`;
       default:                   return data.applicationName || 'Untitled Request';
     }
   },
@@ -372,6 +375,31 @@ ${data.riskAcknowledgement ? '✅ Risk acknowledged by submitter' : '❌ Risk no
 ---
 *Submitted via Cloud Service Management Portal*
 *⚠️ No permanent security exceptions allowed. This exception expires on ${data.expiryDate}.*`;
+  },
+
+  buildSubscriptionBody(data) {
+    return `## New Subscription Creation Request
+
+**Subscription Name:** ${data.subscriptionName}
+**Business Owner:** ${data.businessOwner}
+**Technical Owner:** ${data.technicalOwner}
+**Cost Center:** ${data.costCenter}
+**Subscription Purpose:** ${data.subscriptionPurpose}
+**Management Group:** ${data.managementGroup || 'Not specified'}
+**Budget Limit (monthly):** ${data.budgetLimit || 'Not specified'}
+**Region:** ${data.region}
+**Data Classification:** ${data.dataClassification}
+**Cloud Frontdoor Reference ID:** ${data.cfdReferenceId || 'N/A'}
+
+### Business Justification
+${data.businessJustification}
+
+### Notes
+${data.notes || 'None'}
+
+---
+*Submitted via Cloud Service Management Portal*
+*This request is only applicable after a positive Cloud Frontdoor outcome.*`;
   }
 };
 
