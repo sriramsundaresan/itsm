@@ -79,6 +79,11 @@
         <h3>Security Exception</h3>
         <p>Temporary policy deviation (time-bound)</p>
       </a>
+      <a href="new-ticket.html?type=subscription" class="action-card">
+        <div class="action-icon">☁️</div>
+        <h3>New Subscription</h3>
+        <p>Create a new cloud subscription (Sandbox / Dev / UAT)</p>
+      </a>
     </div>
 
     <!-- Stats -->
@@ -123,6 +128,13 @@
         <div class="stat-info">
           <div class="stat-number" id="statSecEx">-</div>
           <div class="stat-label">Security Exceptions</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#e8f5e9;">☁️</div>
+        <div class="stat-info">
+          <div class="stat-number" id="statSub">-</div>
+          <div class="stat-label">Subscriptions</div>
         </div>
       </div>
     </div>
@@ -217,6 +229,7 @@
         document.getElementById('statNet').textContent = stats.network;
         document.getElementById('statPlat').textContent = stats.platform;
         document.getElementById('statSecEx').textContent = stats.securityException;
+        document.getElementById('statSub').textContent = stats.subscription;
 
         const tbody = document.getElementById('recentRequests');
         if (stats.recentRequests.length === 0) {
